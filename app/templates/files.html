@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<main>
+    <div class="file-table">
+        <h2>📁 Danh sách File</h2>
+
+        <!-- Flash messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            <div class="flashes">
+              {% for category, message in messages %}
+                <div class="flash {{ category }}">{{ message }}</div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        {% endwith %}
+
+        {% if files %}
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Tiêu đề</th>
+                        <th>Tác giả</th>
+                        <th>Mô tả</th>
+                        <th>Loại file</th>
+                        <th>Kích thước</th>
+                        <th>Tags</th>
+                        <th>Ngày tải lên</th>
+                        <th>Hành động</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for file in files %}
+                    <tr>
+                        <td><a href="{{ file.download_url }}" target="_blank">{{ file.title }}</a></td>
+                        <td>{{ file.author }}</td>
+                        <td>{{ file.description }}</td>
+                        <td>{{ file.file_type }}</td>
+                        <td>{{ file.file_size }} KB</td>
+                        <td>{{ file.tags }}</td>
+                        <td>{{ file.upload_date }}</td>
+                        <td>
+                            <form action="{{ url_for('files.delete_file', doc_id=file.id) }}" method="post" onsubmit="return confirm('Bạn có chắc chắn muốn xóa file này không?');">
+                                <button type="submit" class="btn btn-danger">🗑️ Xóa</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="flash warning">📂 Chưa có tệp nào được tải lên.</div>
+        {% endif %}
+
+        <div class="auth-links">
+            <a href="{{ url_for('upload.upload_file') }}">⬅️ Quay lại Trang Tải lên</a>
+        </div>
+    </div>
+</main>
+{% endblock %}

@@ -1,0 +1,105 @@
+{% extends "base.html" %} {% block title %}Login | Flask Firebase App{% endblock
+%} {% block content %}
+<section class="auth-form">
+  <h2>Login</h2>
+  <form method="POST" action="{{ url_for('auth.login') }}">
+    {{ form.csrf_token }}
+
+    <div class="form-group">
+      <label for="email">Email</label>
+      {{ form.email(class="form-control") }}
+    </div>
+
+    <div class="form-group">
+      <label for="password">Password</label>
+      {{ form.password(class="form-control") }}
+    </div>
+
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary">Login</button>
+    </div>
+  </form>
+
+  <div class="social-login mt-4">
+    <h4>Or login with</h4>
+    <div id="firebaseui-auth-container"></div>
+  </div>
+
+  <div class="auth-links">
+    <p>
+      Don't have an account?
+      <a href="{{ url_for('auth.register') }}">Register</a>
+    </p>
+  </div>
+</section>
+
+<!-- Add Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/ui/4.8.0/firebase-ui-auth.js"></script>
+<link
+  type="text/css"
+  rel="stylesheet"
+  href="https://www.gstatic.com/firebasejs/ui/4.8.0/firebase-ui-auth.css"
+/>
+
+<script>
+  // Firebase configuration
+  const firebaseConfig = {
+    apiKey: "{{ config['FIREBASE_CONFIG']['apiKey'] }}",
+    authDomain: "{{ config['FIREBASE_CONFIG']['authDomain'] }}",
+    projectId: "{{ config['FIREBASE_CONFIG']['projectId'] }}",
+    storageBucket: "{{ config['FIREBASE_CONFIG']['storageBucket'] }}",
+    messagingSenderId: "{{ config['FIREBASE_CONFIG']['messagingSenderId'] }}",
+    appId: "{{ config['FIREBASE_CONFIG']['appId'] }}",
+  };
+
+  // Initialize Firebase
+  firebase.initializeApp(firebaseConfig);
+
+  // Sign out any existing users before showing the login UI
+  firebase
+    .auth()
+    .signOut()
+    .then(() => {
+      // Initialize the FirebaseUI Widget using Firebase
+      const ui = new firebaseui.auth.AuthUI(firebase.auth());
+
+      // Configure FirebaseUI
+      ui.start("#firebaseui-auth-container", {
+        signInOptions: [
+          // Enable Google provider with custom parameters
+          {
+            provider: firebase.auth.GoogleAuthProvider.PROVIDER_ID,
+            customParameters: {
+              prompt: "select_account", // This forces the account picker to appear
+            },
+          },
+        ],
+        signInFlow: "popup",
+        callbacks: {
+          signInSuccessWithAuthResult: function (authResult, redirectUrl) {
+            // Get the user's ID token
+            authResult.user.getIdToken().then(function (idToken) {
+              // Send the ID token to your server
+              fetch('{{ url_for("auth.handle_firebase_auth") }}', {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ idToken: idToken }),
+              }).then((response) => {
+                if (response.ok) {
+                  window.location.href = '{{ url_for("main.home") }}';
+                }
+              });
+            });
+            // Return false to prevent FirebaseUI default redirect
+            return false;
+          },
+        },
+      });
+    });
+</script>
+
+{% endblock %}

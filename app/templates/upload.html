@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<main>
+    <div class="auth-form">
+        <h2>🚀 Tải lên File</h2>
+        <form action="{{ url_for('upload.upload_file') }}" method="post" enctype="multipart/form-data">
+            <!-- Flash messages -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+              {% if messages %}
+                <div class="flashes">
+                  {% for category, message in messages %}
+                    <div class="flash {{ category }}">{{ message }}</div>
+                  {% endfor %}
+                </div>
+              {% endif %}
+            {% endwith %}
+
+            <!-- File Upload -->
+            <div class="form-group">
+                <label for="file">Chọn tệp (.zip, .rar) *</label>
+                <input type="file" id="file" name="file" accept=".zip, .rar" required>
+            </div>
+
+            <!-- Title -->
+            <div class="form-group">
+                <label for="title">Tiêu đề *</label>
+                <input type="text" id="title" name="title" placeholder="Nhập tiêu đề tệp" required>
+            </div>
+
+            <!-- Author -->
+            <div class="form-group">
+                <label for="author">Tác giả *</label>
+                <input type="text" id="author" name="author" placeholder="Nhập tên tác giả" required>
+            </div>
+
+            <!-- Description -->
+            <div class="form-group">
+                <label for="description">Mô tả *</label>
+                <textarea id="description" name="description" rows="3" placeholder="Nhập mô tả tệp" required></textarea>
+            </div>
+
+            <!-- Tags -->
+            <div class="form-group">
+                <label for="tags">Thẻ (cách nhau bằng dấu phẩy) *</label>
+                <input type="text" id="tags" name="tags" placeholder="Ví dụ: công nghệ, giáo dục, phần mềm" required>
+            </div>
+
+            <!-- Submit Button -->
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">📤 Tải lên</button>
+            </div>
+        </form>
+
+        <div class="auth-links">
+            <a href="{{ url_for('files.list_files') }}">📁 Xem Danh Sách File</a>
+        </div>
+    </div>
+</main>
+{% endblock %}
