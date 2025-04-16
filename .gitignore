@@ -2,3 +2,10 @@
 serviceAccountKey.json
 google_drive_admin_sdk.json
 .venv1
+
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.db
+*.sqlite3
