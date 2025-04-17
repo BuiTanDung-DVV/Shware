@@ -9,14 +9,13 @@ files_bp = Blueprint('files', __name__)
 
 # Google Drive Setup
 SCOPES = ['https://www.googleapis.com/auth/drive']
-SERVICE_ACCOUNT_FILE = os.getenv('ADMIN_GG_DRIVER_SDK_PATH', 'google_drive_admin_sdk.json')
 
-creds = Credentials.from_service_account_file(SERVICE_ACCOUNT_FILE, scopes=SCOPES)
+creds = Credentials.from_service_account_file(os.getenv('ADMIN_SDK_PATH'), scopes=SCOPES)
 service = build('drive', 'v3', credentials=creds)
 
 # Firebase Setup
 if not firebase_admin._apps:
-    cred = credentials.Certificate(os.getenv('ADMIN_SDK_PATH', 'serviceAccountKey.json'))
+    cred = credentials.Certificate(os.getenv('ADMIN_SDK_PATH'))
     firebase_admin.initialize_app(cred)
 db = firestore.client()
 
@@ -39,7 +38,7 @@ def list_files():
                 'tags': ', '.join(data.get('tags', [])),
                 'upload_date': data.get('upload_date'),
                 'download_url': data.get('download_url'),
-                'drive_file_id': data.get('drive_file_id')  # dùng cho thao tác xóa
+                'drive_file_id': data.get('drive_file_id')
             })
     except Exception as e:
         flash(f'Không thể tải danh sách tệp: {str(e)}')
@@ -56,9 +55,7 @@ def delete_file(doc_id):
             flash('Không tìm thấy tệp để xóa!')
             return redirect(url_for('files.list_files'))
 
-        data = doc.to_dict()
-        drive_file_id = data.get('drive_file_id')
-
+        drive_file_id = doc.to_dict().get('drive_file_id')
         if drive_file_id:
             try:
                 service.files().delete(fileId=drive_file_id).execute()
