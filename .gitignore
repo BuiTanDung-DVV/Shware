@@ -9,3 +9,10 @@ __pycache__/
 *.pyd
 *.db
 *.sqlite3
+
+/.vscode
+
+*.cpython-312.pyc
+*.pyc
+
+.venv/

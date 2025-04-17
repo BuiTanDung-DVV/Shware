@@ -51,10 +51,10 @@ def create_app(config_class=Config):
     from app.main.routes import main_bp
     app.register_blueprint(main_bp)
 
-    from app.files.upload import upload_bp
+    from app.files_management.upload import upload_bp
     app.register_blueprint(upload_bp)
 
-    from app.files.list_files import files_bp
+    from app.files_management.list_files import files_bp
     app.register_blueprint(files_bp)
 
     return app
