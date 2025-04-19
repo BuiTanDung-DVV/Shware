@@ -9,7 +9,7 @@ class Config:
     SECRET_KEY = os.getenv('SECRET_KEY') or 'you-will-never-guess'
     SQLALCHEMY_DATABASE_URI = os.getenv('SQLALCHEMY_DATABASE_URI') or 'sqlite:///site.db'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    drive_sdk_path = os.getenv("ADMIN_GG_DRIVER_SDK_PATH")
+    drive_sdk_path = os.getenv("ADMIN_SDK_PATH")
     credentials = service_account.Credentials.from_service_account_file(drive_sdk_path)
     FIREBASE_CONFIG = {
         "apiKey": os.getenv('API_KEY'),

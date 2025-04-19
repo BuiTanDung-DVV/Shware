@@ -1,7 +1,7 @@
 .env
 serviceAccountKey.json
 google_drive_admin_sdk.json
-.venv1
+.venv
 
 __pycache__/
 *.py[cod]
