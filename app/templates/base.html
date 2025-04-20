@@ -8,30 +8,30 @@
       rel="stylesheet"
       href="{{ url_for('static', filename='style.css') }}"
     />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap"
+      rel="stylesheet"
+    />
   </head>
   <body>
     <!-- Header -->
     <header>
-      <div class="container">
-        <h1>Shware</h1>
+      <div class="container header-container">
+        <h1 class="logo">
+          <a href="{{ url_for('main.home') }}">🔗 Shware</a>
+        </h1>
 
         <!-- Navigation bar -->
         <nav>
-          <ul>
-            <!-- Link to Home page -->
+          <ul class="nav-links">
             <li><a href="{{ url_for('main.home') }}">Home</a></li>
-
             {% if current_user.is_authenticated %}
-            <!-- Links shown only when user is logged in -->
-            <li>
-              <a href="{{ url_for('dashboard.dashboard') }}">Dashboard</a>
-            </li>
+            <li><a href="{{ url_for('dashboard.dashboard') }}">Dashboard</a></li>
             <li><a href="{{ url_for('files.list_files') }}">Files</a></li>
             <li><a href="{{ url_for('upload.upload_file') }}">Upload</a></li>
             <li><a href="{{ url_for('dashboard.dashboard') }}">Profile</a></li>
             <li><a href="{{ url_for('auth.logout') }}">Logout</a></li>
             {% else %}
-            <!-- Links for guests -->
             <li><a href="{{ url_for('auth.login') }}">Login</a></li>
             <li><a href="{{ url_for('auth.register') }}">Register</a></li>
             {% endif %}
@@ -42,20 +42,22 @@
 
     <!-- Main content -->
     <main class="container">
-      {% with messages = get_flashed_messages(with_categories=true) %} {% if
-      messages %}
-      <div class="flashes">
-        {% for category, message in messages %}
-        <div class="flash {{ category }}">{{ message }}</div>
-        {% endfor %}
-      </div>
-      {% endif %} {% endwith %} {% block content %}{% endblock %}
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="flashes">
+            {% for category, message in messages %}
+              <div class="flash {{ category }}">{{ message }}</div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+      {% block content %}{% endblock %}
     </main>
 
     <!-- Footer -->
     <footer>
       <div class="container">
-        <p>&copy; Shware</p>
+        <p>&copy; {{ current_year or 2025 }} Shware. All rights reserved.</p>
       </div>
     </footer>
   </body>
