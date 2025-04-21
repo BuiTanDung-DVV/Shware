@@ -57,7 +57,8 @@ def login():
             })
 
             flash('Login successful!', 'success')
-            return redirect(url_for('dashboard.dashboard'))
+            # Redirect to profile page instead of dashboard
+            return redirect(url_for('dashboard.profile'))
         except Exception as e:
             flash(f'Login failed: {str(e)}', 'danger')
 

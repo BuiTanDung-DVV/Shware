@@ -1,60 +1,86 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>{% block title %}Shware{% endblock %}</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
-</head>
-<body>
-  <!-- Header -->
-  <header>
-    <div class="container">
-      <h1>Flask Firebase App</h1>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{% block title %}Shware{% endblock %}</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+  </head>
+  <body>
+    <!-- Header -->
+    <header>
+      <div class="top-bar">
+        <div class="container">
+          <!-- Spacer element -->
+          <div class="top-bar-spacer"></div>
+          <!-- Search bar -->
+          <form
+            class="search-form"
+            action="{{ url_for('main.search') }}"
+            method="get"
+          >
+            <input type="text" name="q" placeholder="Tìm kiếm..." required />
+            <button type="submit">🔍</button>
+          </form>
 
-      <!-- Navigation bar -->
-      <nav>
-        <ul>
-          <!-- Link to Home page -->
-          <li><a href="{{ url_for('main.home') }}">Home</a></li>
-
-          {% if current_user.is_authenticated %}
+          <!-- User Actions -->
+          <div class="user-actions">
+            {% if current_user.is_authenticated %}
             <!-- Links shown only when user is logged in -->
-            <li><a href="{{ url_for('dashboard.dashboard') }}">Dashboard</a></li>
-            <li><a href="{{ url_for('files.list_files') }}">Files</a></li>
-            <li><a href="{{ url_for('upload.upload_file') }}">Upload</a></li>
-            <li><a href="{{ url_for('dashboard.dashboard') }}">Profile</a></li>
-            <li><a href="{{ url_for('auth.logout') }}">Logout</a></li>
-          {% else %}
+            <a href="{{ url_for('dashboard.profile') }}">Profile</a>
+            <a href="{{ url_for('auth.logout') }}">Logout</a>
+            {% else %}
             <!-- Links for guests -->
-            <li><a href="{{ url_for('auth.login') }}">Login</a></li>
-            <li><a href="{{ url_for('auth.register') }}">Register</a></li>
-          {% endif %}
-        </ul>
-      </nav>
-    </div>
-  </header>
-
-  <!-- Main content -->
-  <main class="container">
-    {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}
-        <div class="flashes">
-          {% for category, message in messages %}
-            <div class="flash {{ category }}">{{ message }}</div>
-          {% endfor %}
+            <a href="{{ url_for('auth.login') }}">Login</a>
+            <a href="{{ url_for('auth.register') }}">Register</a>
+            {% endif %}
+            <!-- Placeholder for theme toggle, notifications etc. -->
+          </div>
         </div>
-      {% endif %}
-    {% endwith %}
+      </div>
 
-    {% block content %}{% endblock %}
-  </main>
+      <div class="main-nav">
+        <div class="container">
+          <h1>
+            <a
+              href="{{ url_for('main.home') }}"
+              style="color: inherit; text-decoration: none; font-size: 1.6em"
+              >Shware</a
+            >
+          </h1>
+          <!-- Main Navigation bar -->
+          <nav>
+            <ul>
+              {% if current_user.is_authenticated %}
+              <li><a href="{{ url_for('files.list_files') }}">Files</a></li>
+              <li><a href="{{ url_for('upload.upload_file') }}">Upload</a></li>
+              {% endif %}
+            </ul>
+          </nav>
+        </div>
+      </div>
+    </header>
 
-  <!-- Footer -->
-  <footer>
-    <div class="container">
-      <p>&copy; Shware</p>
-    </div>
-  </footer>
-</body>
+    <!-- Main content -->
+    <main class="container">
+      {% with messages = get_flashed_messages(with_categories=true) %} {% if
+      messages %}
+      <div class="flashes">
+        {% for category, message in messages %}
+        <div class="flash {{ category }}">{{ message }}</div>
+        {% endfor %}
+      </div>
+      {% endif %} {% endwith %} {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer>
+      <div class="container">
+        <p>&copy; Shware</p>
+      </div>
+    </footer>
+  </body>
 </html>
