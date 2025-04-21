@@ -4,6 +4,7 @@ google_drive_admin_sdk.json
 .venv
 .venv1
 
+site.db
 __pycache__/
 *.py[cod]
 *.pyo

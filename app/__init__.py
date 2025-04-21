@@ -1,3 +1,4 @@
+from datetime import datetime
 import firebase_admin
 from firebase_admin import credentials
 from flask import Flask
@@ -36,6 +37,17 @@ def create_app(config_class=Config):
         except ValueError:
             # App already initialized
             pass
+
+    # Jinja filter for converting timestamp to readable date
+    @app.template_filter('timestamp_to_date')
+    def timestamp_to_date_filter(s):
+        if not s:
+            return "N/A" # Handle cases where timestamp might be None
+        try:
+            # Assuming s is a Unix timestamp (seconds since epoch)
+            return datetime.utcfromtimestamp(float(s)).strftime('%Y-%m-%d %H:%M:%S UTC')
+        except (ValueError, TypeError):
+            return "Invalid Date"
 
     # Initialize Flask-Login
     login_manager.init_app(app)

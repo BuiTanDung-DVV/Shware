@@ -1,6 +1,6 @@
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField, ValidationError
-from wtforms.validators import DataRequired, Email, EqualTo, Length, Regexp
+from wtforms.validators import DataRequired, Email, EqualTo, Length, Regexp, Optional
 
 class LoginForm(FlaskForm):
     email = StringField('Email', validators=[DataRequired(), Email()])
@@ -30,3 +30,28 @@ class RegistrationForm(FlaskForm):
                     'support', 'staff', 'root', 'webmaster', 'security']
         if name.data.lower() in reserved:
             raise ValidationError('* This username is reserved. Please choose a different one.')
+
+class ProfileUpdateForm(FlaskForm):
+    display_name = StringField('Display Name', validators=[
+        Optional(),
+        Length(min=3, max=50, message='Display name must be between 3 and 50 characters')
+    ])
+    current_password = PasswordField('Current Password', validators=[Optional()])
+    new_password = PasswordField('New Password', validators=[
+        Optional(),
+        Length(min=6, message='* New password must be at least 6 characters long'),
+        EqualTo('confirm_new_password', message='New passwords must match')
+    ])
+    confirm_new_password = PasswordField('Confirm New Password', validators=[Optional()])
+    submit = SubmitField('Update Profile')
+
+    def validate(self, extra_validators=None):
+        # Only require current password if new password is being set
+        if self.new_password.data:
+            if not self.current_password.data:
+                self.current_password.errors.append('Current password is required to set a new password.')
+                return False
+            if not self.confirm_new_password.data:
+                 self.confirm_new_password.errors.append('Please confirm your new password.')
+                 return False
+        return super(ProfileUpdateForm, self).validate(extra_validators=extra_validators)

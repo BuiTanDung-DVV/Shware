@@ -16,42 +16,68 @@
   <body>
     <!-- Header -->
     <header>
-      <div class="container header-container">
-        <h1 class="logo">
-          <a href="{{ url_for('main.home') }}">🔗 Shware</a>
-        </h1>
+      <div class="top-bar">
+        <div class="container">
+          <!-- Spacer element -->
+          <div class="top-bar-spacer"></div>
+          <!-- Search bar -->
+          <form
+            class="search-form"
+            action="{{ url_for('main.search') }}"
+            method="get"
+          >
+            <input type="text" name="q" placeholder="Tìm kiếm..." required />
+            <button type="submit">🔍</button>
+          </form>
 
-        <!-- Navigation bar -->
-        <nav>
-          <ul class="nav-links">
-            <li><a href="{{ url_for('main.home') }}">Home</a></li>
+          <!-- User Actions -->
+          <div class="user-actions">
             {% if current_user.is_authenticated %}
-            <li><a href="{{ url_for('dashboard.dashboard') }}">Dashboard</a></li>
-            <li><a href="{{ url_for('files.list_files') }}">Files</a></li>
-            <li><a href="{{ url_for('upload.upload_file') }}">Upload</a></li>
-            <li><a href="{{ url_for('dashboard.dashboard') }}">Profile</a></li>
-            <li><a href="{{ url_for('auth.logout') }}">Logout</a></li>
+            <!-- Links shown only when user is logged in -->
+            <a href="{{ url_for('dashboard.profile') }}">Profile</a>
+            <a href="{{ url_for('auth.logout') }}">Logout</a>
             {% else %}
-            <li><a href="{{ url_for('auth.login') }}">Login</a></li>
-            <li><a href="{{ url_for('auth.register') }}">Register</a></li>
+            <!-- Links for guests -->
+            <a href="{{ url_for('auth.login') }}">Login</a>
+            <a href="{{ url_for('auth.register') }}">Register</a>
             {% endif %}
-          </ul>
-        </nav>
+            <!-- Placeholder for theme toggle, notifications etc. -->
+          </div>
+        </div>
+      </div>
+
+      <div class="main-nav">
+        <div class="container">
+          <h1>
+            <a
+              href="{{ url_for('main.home') }}"
+              style="color: inherit; text-decoration: none; font-size: 1.6em"
+              >Shware</a
+            >
+          </h1>
+          <!-- Main Navigation bar -->
+          <nav>
+            <ul>
+              {% if current_user.is_authenticated %}
+              <li><a href="{{ url_for('files.list_files') }}">Files</a></li>
+              <li><a href="{{ url_for('upload.upload_file') }}">Upload</a></li>
+              {% endif %}
+            </ul>
+          </nav>
+        </div>
       </div>
     </header>
 
     <!-- Main content -->
     <main class="container">
-      {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-          <div class="flashes">
-            {% for category, message in messages %}
-              <div class="flash {{ category }}">{{ message }}</div>
-            {% endfor %}
-          </div>
-        {% endif %}
-      {% endwith %}
-      {% block content %}{% endblock %}
+      {% with messages = get_flashed_messages(with_categories=true) %} {% if
+      messages %}
+      <div class="flashes">
+        {% for category, message in messages %}
+        <div class="flash {{ category }}">{{ message }}</div>
+        {% endfor %}
+      </div>
+      {% endif %} {% endwith %} {% block content %}{% endblock %}
     </main>
 
     <!-- Footer -->

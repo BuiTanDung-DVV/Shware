@@ -11,8 +11,8 @@ auth_bp = Blueprint('auth', __name__)
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
-    # if current_user.is_authenticated:
-    #     return redirect(url_for('main.home'))
+    if current_user.is_authenticated:
+        return redirect(url_for('main.home'))
 
     form = LoginForm()
     if form.validate_on_submit():
@@ -57,7 +57,8 @@ def login():
             })
 
             flash('Login successful!', 'success')
-            return redirect(url_for('dashboard.dashboard'))
+            # Redirect to profile page instead of dashboard
+            return redirect(url_for('main.home()'))
         except Exception as e:
             flash(f'Login failed: {str(e)}', 'danger')
 
@@ -134,8 +135,8 @@ def handle_firebase_auth():
 
 @auth_bp.route('/register', methods=['GET', 'POST'])
 def register():
-    # if current_user.is_authenticated:
-    #     return redirect(url_for('main.home'))
+    if current_user.is_authenticated:
+        return redirect(url_for('main.home'))
 
     form = RegistrationForm()
     print("Form data: 1")

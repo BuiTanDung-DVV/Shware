@@ -1,0 +1,72 @@
+{% extends 'base.html' %} {% block title %}Search Results for "{{ query }}" |
+Shware{% endblock %} {% block content %}
+<div class="container mt-5">
+  <h2 class="mb-4 text-center">🔍 Kết quả tìm kiếm cho: "{{ query }}"</h2>
+
+  {% if not current_user.is_authenticated %}
+  <div class="alert alert-warning text-center">
+    🔒 Vui lòng
+    <a href="{{ url_for('auth.login') }}" class="alert-link">đăng nhập</a> để có
+    thể tải file.
+  </div>
+  {% endif %} {% if results %}
+  <div class="row">
+    {% for file in results %}
+    <div class="col-md-6 col-lg-4">
+      <div class="card mb-4 shadow-sm h-100">
+        <div class="card-body d-flex flex-column">
+          <h5 class="card-title">{{ file.title }}</h5>
+          <p class="card-text text-truncate" title="{{ file.description }}">
+            {{ file.description }}
+          </p>
+          <p class="mb-2">
+            <strong>Tags:</strong>
+            {% for tag in file.tags.split(',') %} {% if tag.strip() %}
+            <span class="badge bg-light text-dark">{{ tag.strip() }}</span>
+            {% endif %} {% endfor %}
+          </p>
+          <p class="card-text">
+            <small class="text-muted">Tác giả: {{ file.author }}</small>
+          </p>
+          <p class="card-text">
+            <small class="text-muted"
+              >Ngày tải lên: {{ file.upload_date.strftime('%Y-%m-%d %H:%M') if
+              file.upload_date else 'N/A' }}</small
+            >
+          </p>
+
+          <div class="mt-auto">
+            {% if current_user.is_authenticated %}
+            <a
+              href="{{ file.download_url }}"
+              class="btn btn-primary w-100"
+              target="_blank"
+              >⬇️ Tải xuống</a
+            >
+            {% else %}
+            <a
+              href="{{ url_for('auth.login') }}"
+              class="btn btn-secondary w-100"
+              >🔒 Đăng nhập để tải</a
+            >
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %} {% if query %} {# Only show 'no results' if a query was actually
+  made #}
+  <div class="alert alert-info text-center">
+    Không tìm thấy tệp nào phù hợp với tìm kiếm của bạn.
+  </div>
+  {% endif %} {% endif %}
+
+  <div class="text-center mt-4">
+    <a href="{{ url_for('main.home') }}" class="btn btn-secondary"
+      >⬅️ Quay lại Trang chủ</a
+    >
+  </div>
+</div>
+{% endblock %}
