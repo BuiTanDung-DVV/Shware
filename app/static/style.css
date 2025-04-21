@@ -1,14 +1,47 @@
-/* Base Styles */
 :root {
+  /* Light Theme (Default) */
   --primary-color: #0d6efd;
   --secondary-color: #20c997;
   --text-color: #212529;
+  --bg-color: #f4f6f9;
+  --card-bg: white;
   --light-color: #f8f9fa;
   --border-color: #dee2e6;
   --error-color: #dc3545;
   --success-color: #198754;
   --warning-color: #ffc107;
-  --input-bg: #ecf0f1;
+  --input-bg: #ffffff;
+  --input-border: #ced4da;
+  --top-bar-bg: #2c3e50;
+  --top-bar-text: #f8f9fa;
+  --link-color: var(--primary-color);
+  --link-hover-color: #0b5ed7;
+  --dropdown-item-text: black;
+  --dropdown-item-hover-bg: #f1f1f1;
+  --dropdown-item-hover-text: var(--primary-color);
+}
+
+/* Dark Theme Overrides (Applied via body.dark-theme class) */
+body.dark-theme {
+  --primary-color: #4dabf7;
+  --secondary-color: #48d1cc;
+  --text-color: #e0e0e0;
+  --bg-color: #1a1a1a;
+  --card-bg: #2c2c2c;
+  --light-color: #3a3a3a;
+  --border-color: #444;
+  --error-color: #f17c7c;
+  --success-color: #6bc88a;
+  --warning-color: #ffd966;
+  --input-bg: #3a3a3a;
+  --input-border: #555;
+  --top-bar-bg: #1f1f1f;
+  --top-bar-text: #e0e0e0;
+  --link-color: var(--primary-color);
+  --link-hover-color: #8ec9f9;
+  --dropdown-item-text: #e0e0e0;
+  --dropdown-item-hover-bg: #444;
+  --dropdown-item-hover-text: var(--primary-color);
 }
 
 * {
@@ -16,19 +49,24 @@
   margin: 0;
   padding: 0;
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-  transition: all 0.3s ease;
+  transition: background-color 0.3s ease, color 0.3s ease,
+    border-color 0.3s ease;
 }
 
 body {
   font-family: "Inter", sans-serif;
-  background-color: #f4f6f9;
+  background-color: var(--bg-color);
   color: var(--text-color);
   line-height: 1.6;
 }
 
 a {
   text-decoration: none;
-  color: var(--primary-color);
+  color: var(--link-color);
+}
+
+a:hover {
+  color: var(--link-hover-color);
 }
 
 ul {
@@ -43,13 +81,12 @@ ul {
 
 /* Header */
 header {
-  background-color: white;
+  background-color: var(--card-bg);
   padding: 1rem 2rem;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
   position: sticky;
   top: 0;
   z-index: 1000;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
 header .container {
@@ -86,12 +123,12 @@ header nav ul li a:hover {
 header nav .search-form {
   display: flex;
   align-items: center;
-  margin-left: 1.5rem; /* Adjust margin as needed */
+  margin-left: 1.5rem;
 }
 
 header nav .search-form input[type="text"] {
   padding: 0.3rem 0.6rem;
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--input-border);
   border-radius: 4px 0 0 4px;
   font-size: 0.9rem;
   outline: none;
@@ -115,14 +152,14 @@ header nav .search-form button {
 }
 
 header nav .search-form button:hover {
-  background-color: #2980b9;
+  background-color: var(--link-hover-color);
 }
 
 /* Top Bar */
 .top-bar {
-  background-color: #2c3e50;
+  background-color: var(--top-bar-bg);
   padding: 0.5rem 0;
-  border-bottom: 1px solid #4a6572;
+  border-bottom: 1px solid var(--border-color);
 }
 
 .top-bar .container {
@@ -148,7 +185,7 @@ header nav .search-form button:hover {
   flex-basis: auto;
   max-width: 500px;
   width: 100%;
-  border: 1px solid var(--input-bg);
+  border: 1px solid var(--input-border);
   overflow: hidden;
   margin: 0 1rem;
 }
@@ -177,7 +214,7 @@ header nav .search-form button:hover {
   background-color: transparent;
   color: #bdc3c7;
   cursor: pointer;
-  font-size: 1.1rem; /* Slightly larger icon */
+  font-size: 1.1rem;
   transition: color 0.3s;
 }
 
@@ -197,7 +234,7 @@ header nav .search-form button:hover {
 }
 
 .user-greeting {
-  color: var(--light-color);
+  color: var(--top-bar-text);
   margin-right: 0.5rem;
 }
 
@@ -209,7 +246,7 @@ header nav .search-form button:hover {
 .dropdown-toggle {
   background: none;
   border: none;
-  color: var(--light-color);
+  color: var(--top-bar-text);
   cursor: pointer;
   font-size: 1rem;
   padding: 0.2rem 0;
@@ -220,12 +257,13 @@ header nav .search-form button:hover {
   position: absolute;
   right: 0;
   top: 100%;
-  background-color: white;
+  background-color: var(--card-bg);
   min-width: 160px;
   box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
   z-index: 100;
   border-radius: 4px;
   padding: 0.5rem 0;
+  border: 1px solid var(--border-color);
 }
 
 .dropdown-menu.show {
@@ -233,29 +271,39 @@ header nav .search-form button:hover {
 }
 
 .dropdown-item {
-  color: black !important;
+  color: var(--dropdown-item-text) !important;
   padding: 0.5rem 1rem;
   text-decoration: none;
   display: block;
   white-space: nowrap;
 }
 
-/* .user-actions .dropdown-menu .dropdown-item {
-  color: black !important;
-} */
-
 .dropdown-item:hover {
-  background-color: #f1f1f1;
-  color: var(--primary-color) !important;
+  background-color: var(--dropdown-item-hover-bg);
+  color: var(--dropdown-item-hover-text) !important;
 }
 
 .user-actions a {
-  color: var(--light-color);
-  /* margin-left: 1rem; */
+  color: var(--top-bar-text);
   transition: color 0.3s;
 }
 
 .user-actions a:hover {
+  color: var(--primary-color);
+}
+
+/* Theme Toggle Button */
+.theme-toggle-btn {
+  background: none;
+  border: none;
+  color: var(--top-bar-text);
+  cursor: pointer;
+  font-size: 1.1rem;
+  padding: 0.2rem 0.5rem;
+  margin-right: 0.5rem; /* Space before greeting */
+}
+
+.theme-toggle-btn:hover {
   color: var(--primary-color);
 }
 
@@ -301,7 +349,7 @@ main {
   padding: 0.5rem 1.5rem;
   background-color: var(--light-color);
   color: var(--text-color);
-  border: none;
+  border: 1px solid transparent;
   border-radius: 4px;
   cursor: pointer;
   font-size: 1rem;
@@ -327,10 +375,12 @@ main {
 .btn-primary {
   background-color: var(--primary-color);
   color: white;
+  border-color: var(--primary-color);
 }
 
 .btn-primary:hover {
-  background-color: #2980b9;
+  background-color: var(--link-hover-color);
+  border-color: var(--link-hover-color);
 }
 
 .btn-secondary {
@@ -346,7 +396,7 @@ main {
 .auth-form {
   max-width: 500px;
   margin: 0 auto;
-  background-color: white;
+  background-color: var(--card-bg);
   padding: 2rem;
   border-radius: 8px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
@@ -372,9 +422,11 @@ main {
 .form-group textarea {
   width: 100%;
   padding: 0.75rem;
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--input-border);
   border-radius: 4px;
   font-size: 1rem;
+  background-color: var(--input-bg);
+  color: var(--text-color);
 }
 
 .form-group input:focus,
@@ -423,7 +475,7 @@ social-login h4 {
 .hero {
   text-align: center;
   padding: 3rem 1rem;
-  background-color: white;
+  background-color: var(--card-bg);
   border-radius: 8px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
   margin-bottom: 2rem;
@@ -463,7 +515,7 @@ social-login h4 {
 }
 
 .feature-card {
-  background-color: white;
+  background-color: var(--card-bg);
   padding: 1.5rem;
   border-radius: 8px;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
@@ -560,7 +612,7 @@ social-login h4 {
 }
 
 .profile-form {
-  background-color: white;
+  background-color: var(--card-bg);
   padding: 2rem;
   border-radius: 8px;
   width: 90%;
@@ -575,7 +627,7 @@ social-login h4 {
 
 /* Footer */
 footer {
-  background-color: white;
+  background-color: var(--card-bg);
   text-align: center;
   padding: 1.5rem 0;
   box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.1);
@@ -664,5 +716,80 @@ footer p {
 
   .hero p {
     font-size: 1rem;
+  }
+}
+
+/* Styles from profile.html */
+.profile-container {
+  max-width: 1100px;
+  margin: 20px auto;
+  padding: 20px;
+  background-color: var(--card-bg); /* Use variable */
+  border: 1px solid var(--border-color); /* Use variable */
+  border-radius: 8px;
+}
+.profile-grid {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 30px;
+}
+.profile-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  background-color: var(--light-color); /* Optional: slightly different bg */
+  padding: 1.5rem;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+}
+.profile-info h3 {
+  margin-bottom: 15px;
+  color: var(--text-color); /* Use variable */
+}
+.profile-avatar {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  margin-bottom: 20px;
+  object-fit: cover;
+  border: 3px solid var(--border-color); /* Add border */
+}
+.profile-info p {
+  margin-bottom: 10px;
+  color: var(--text-color); /* Use variable */
+}
+.profile-update-form {
+  background-color: var(--card-bg); /* Use variable */
+  padding: 1.5rem;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+}
+.profile-update-form h3 {
+  color: var(--text-color);
+  margin-bottom: 1.5rem;
+}
+.profile-update-form h4 {
+  margin-top: 20px;
+  margin-bottom: 10px;
+  color: var(--text-color);
+}
+.profile-update-form hr {
+  margin: 20px 0;
+  border-color: var(--border-color);
+}
+.profile-update-form .form-group {
+  margin-bottom: 20px;
+}
+.profile-update-form .text-muted {
+  color: #6c757d;
+}
+body.dark-theme .profile-update-form .text-muted {
+  color: #adb5bd;
+}
+
+@media (max-width: 768px) {
+  .profile-grid {
+    grid-template-columns: 1fr;
   }
 }

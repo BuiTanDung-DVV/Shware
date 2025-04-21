@@ -9,6 +9,32 @@ from datetime import datetime
 
 auth_bp = Blueprint('auth', __name__)
 
+# --- Helper Function to get Default Profile Pic ---
+_default_profile_pic_url = None # Cache the URL
+
+def get_default_profile_pic_url():
+    global _default_profile_pic_url
+    if _default_profile_pic_url is not None:
+        # Return cached value (can be empty string if not found)
+        return _default_profile_pic_url
+
+    try:
+        firestore_db = firestore.client()
+        assets_ref = firestore_db.collection('assets')
+        query = assets_ref.where('name', '==', 'profile pic').limit(1)
+        docs = query.stream()
+        for doc in docs: 
+            _default_profile_pic_url = doc.to_dict().get('value', "")
+            return _default_profile_pic_url
+        # If no document found
+        _default_profile_pic_url = ""
+        return ""
+    except Exception as e:
+        print(f"Error fetching default profile pic URL: {e}")
+        _default_profile_pic_url = "" # Cache empty string on error
+        return ""
+# --- End Helper Function ---
+
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
     if current_user.is_authenticated:
@@ -21,46 +47,75 @@ def login():
         try:
             # Sign in with email and password using Firebase Auth
             auth = firebase_admin.auth
+            # Note: Firebase Admin SDK doesn't verify passwords directly.
+            # This assumes the user exists in Firebase Auth.
+            # For actual password verification, you'd typically use a client-side SDK
+            # and send the ID token, similar to handle_firebase_auth.
+            # Assuming get_user_by_email is sufficient for this flow's check.
             user_record = auth.get_user_by_email(email)
+            uid = user_record.uid
 
-            # Find user in the local database
-            user = User.query.filter_by(email=email).first()
+            # Determine profile pic URL
+            profile_pic_url = user_record.photo_url or get_default_profile_pic_url() or ""
+
+            # Find or create user in the local database
+            user = User.query.filter_by(id=uid).first()
             if not user:
-                # Create the user in the local database if not exists
-                user = User(
-                    id_=user_record.uid,
-                    name=user_record.display_name or email.split('@')[0],
-                    email=email,
-                    profile_pic=user_record.photo_url or ""
-                )
-                db.session.add(user)
-                db.session.commit()
+                 # Fallback check by email if ID check failed (e.g., during migration)
+                 user = User.query.filter_by(email=email).first()
+                 if user:
+                     # Update local user ID if it was different
+                     user.id = uid
+                     db.session.commit()
+                 else:
+                    # Create the user in the local database if not exists by ID or email
+                    user = User(
+                        id_=uid,
+                        name=user_record.display_name or email.split('@')[0],
+                        email=email,
+                        profile_pic=profile_pic_url # Use determined URL
+                    )
+                    db.session.add(user)
+                    db.session.commit()
+            # Update local profile pic if it's different or was empty
+            elif not user.profile_pic or user.profile_pic != profile_pic_url:
+                 user.profile_pic = profile_pic_url
+                 db.session.commit()
 
-                # Create or update user in Firestore
-                firestore_db = firestore.client()
-                firestore_db.collection('users').document(user_record.uid).set({
-                    'name': user_record.display_name or email.split('@')[0],
-                    'email': email,
-                    'profile_pic': user_record.photo_url or "",
-                    'created_at': datetime.now(),
+            # Check and update/create user in Firestore
+            firestore_db = firestore.client()
+            user_doc_ref = firestore_db.collection('users').document(uid)
+            user_doc = user_doc_ref.get()
+
+            if user_doc.exists:
+                # User exists in Firestore, update last_login and potentially profile pic
+                update_data = {'last_login': datetime.now()}
+                existing_data = user_doc.to_dict()
+                if existing_data.get('profile_pic') != profile_pic_url:
+                    update_data['profile_pic'] = profile_pic_url
+                user_doc_ref.update(update_data)
+            else:
+                # User does not exist in Firestore, create them using set
+                user_doc_ref.set({
+                    'name': user.name,
+                    'email': user.email,
+                    'profile_pic': profile_pic_url,
+                    'created_at': user.registration_date or datetime.now(), # Use local reg date if available
                     'last_login': datetime.now(),
                     'auth_provider': 'email'
                 })
 
-            # Log in the user
+            # Log in the user locally
             login_user(user)
 
-            # Update last login time
-            firestore_db = firestore.client()
-            firestore_db.collection('users').document(user_record.uid).update({
-                'last_login': datetime.now()
-            })
-
             flash('Login successful!', 'success')
-            # Redirect to profile page instead of dashboard
-            return redirect(url_for('main.home()'))
+            return redirect(url_for('main.home'))
+        except firebase_admin.auth.UserNotFoundError:
+             flash('Login failed: User not found.', 'danger')
         except Exception as e:
-            flash(f'Login failed: {str(e)}', 'danger')
+            # Catch other potential errors, like wrong password if using a client SDK flow
+            flash(f'Login failed: Invalid credentials or server error.', 'danger')
+            # Log the actual error for debugging: print(f"Login error: {e}")
 
     return render_template('login.html', form=form, config=Config)
 
@@ -79,59 +134,72 @@ def handle_firebase_auth():
         # Get the user's info from Firebase
         user_record = firebase_auth.get_user(uid)
         email = user_record.email
+        # Determine profile pic URL
+        profile_pic_url = user_record.photo_url or get_default_profile_pic_url() or ""
+        display_name = user_record.display_name or email.split('@')[0]
+        auth_provider = decoded_token.get('firebase', {}).get('sign_in_provider', 'unknown') # e.g., 'google.com'
 
-        # First check if a user with this email already exists
-        existing_user = User.query.filter_by(email=email).first()
-        if existing_user:
-            # Handle the case where the email already exists but with a different ID
-            if existing_user.id != uid:
-                # Link the accounts - update the existing user with the new UID
-                existing_user.id = uid
-                # Update other fields if needed
-                existing_user.name = user_record.display_name
-                existing_user.profile_pic = user_record.photo_url or ""
+        # Find or create user in the local database
+        user = User.query.filter_by(id=uid).first()
+        if not user:
+            # Fallback check by email if ID check failed
+            user = User.query.filter_by(email=email).first()
+            if user:
+                # Email exists, but ID was different. Link accounts by updating local ID.
+                user.id = uid
+                # Optionally update other fields from provider if desired
+                user.name = display_name
+                user.profile_pic = profile_pic_url
                 db.session.commit()
-                user = existing_user
             else:
-                user = existing_user
-        else:
-        # Check if user exists in our database
-            user = User.query.filter_by(id=uid).first()
-            if not user:
-                # Create a new user in database
+                # Create a new user in the local database
                 user = User(
                     id_=uid,
-                    name=user_record.display_name,
-                    email=user_record.email,
-                    profile_pic=user_record.photo_url or ""
+                    name=display_name,
+                    email=email,
+                    profile_pic=profile_pic_url # Use determined URL
                 )
                 db.session.add(user)
                 db.session.commit()
+        # Update local profile pic if it's different or was empty
+        elif not user.profile_pic or user.profile_pic != profile_pic_url:
+            user.profile_pic = profile_pic_url
+            db.session.commit()
 
-                # Create user in Firestore
-                firestore_db = firestore.client()
-                firestore_db.collection('users').document(uid).set({
-                    'name': user_record.display_name,
-                    'email': user_record.email,
-                    'profile_pic': user_record.photo_url or "",
-                    'created_at': datetime.now(),
-                    'last_login': datetime.now(),
-                    'auth_provider': 'google'
-                })
-            else:
-                # Update last login time
-                firestore_db = firestore.client()
-                firestore_db.collection('users').document(uid).update({
-                    'last_login': datetime.now()
-                })
+        # Check and update/create user in Firestore
+        firestore_db = firestore.client()
+        user_doc_ref = firestore_db.collection('users').document(uid)
+        user_doc = user_doc_ref.get()
 
-        # Log in the user
+        if user_doc.exists:
+            # User exists in Firestore, update last_login and potentially profile pic
+            update_data = {'last_login': datetime.now()}
+            existing_data = user_doc.to_dict()
+            # Optionally update name from provider if desired
+            # if existing_data.get('name') != display_name:
+            #     update_data['name'] = display_name
+            if existing_data.get('profile_pic') != profile_pic_url:
+                update_data['profile_pic'] = profile_pic_url
+            user_doc_ref.update(update_data)
+        else:
+            # User does not exist in Firestore, create them using set
+            user_doc_ref.set({
+                'name': display_name,
+                'email': email,
+                'profile_pic': profile_pic_url, # Use determined URL
+                'created_at': user.registration_date or datetime.now(), # Use local reg date
+                'last_login': datetime.now(),
+                'auth_provider': auth_provider
+            })
+
+        # Log in the user locally
         login_user(user)
 
         return json.jsonify({'success': True}), 200
 
     except Exception as e:
-        return json.jsonify({'error': str(e)}), 400
+        # Log the error: print(f"Handle Firebase Auth error: {e}")
+        return json.jsonify({'error': 'Authentication failed.'}), 400
 
 @auth_bp.route('/register', methods=['GET', 'POST'])
 def register():
@@ -145,11 +213,15 @@ def register():
         username = form.name.data if hasattr(form, 'name') else email.split('@')[0]
 
         try:
+            # Determine profile pic URL (will use default for registration)
+            profile_pic_url = get_default_profile_pic_url() or ""
+
             # Create user in Firebase Auth
             user_record = firebase_auth.create_user(
                 email=email,
                 password=password,
-                display_name=username
+                display_name=username,
+                photo_url=profile_pic_url # Set default in Firebase Auth too if possible
             )
 
             # Create user in database
@@ -157,7 +229,7 @@ def register():
                 id_=user_record.uid,
                 name=username,
                 email=email,
-                profile_pic=""
+                profile_pic=profile_pic_url # Use determined URL
             )
             db.session.add(user)
             db.session.commit()
@@ -167,7 +239,7 @@ def register():
             firestore_db.collection('users').document(user_record.uid).set({
                 'name': username,
                 'email': email,
-                'profile_pic': "",
+                'profile_pic': profile_pic_url, # Use determined URL
                 'created_at': datetime.now(),
                 'last_login': None,
                 'auth_provider': 'email'

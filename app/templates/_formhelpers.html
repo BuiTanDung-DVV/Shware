@@ -1,4 +1,4 @@
-{% macro render_field(field) %}
+{% macro render_field(field) %} {# Reverted to original signature #}
 <div class="form-group {% if field.errors %}has-error{% endif %}">
   {{ field.label(class="form-label") }} {{ field(class="form-control") }} {% if
   field.errors %}

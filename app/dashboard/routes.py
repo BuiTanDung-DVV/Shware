@@ -94,7 +94,7 @@ def profile():
     user_info = {
         'email': firebase_user.email,
         'name': firebase_user.display_name,
-        'avatar': firebase_user.photo_url or url_for('static', filename='default_avatar.png'),
+        'avatar': firebase_user.photo_url or url_for('static', filename='default_avatar.jpg'),
         'registration_date': registration_date
     }
 
