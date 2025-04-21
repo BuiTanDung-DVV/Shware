@@ -38,6 +38,15 @@
           <!-- User Actions -->
           <div class="user-actions">
             {% if current_user.is_authenticated %}
+            <!-- Theme Toggle Button -->
+            <button
+              id="theme-toggle"
+              class="theme-toggle-btn"
+              title="Toggle theme"
+            >
+              <i class="fas fa-sun"></i>
+            </button>
+
             <div class="user-greeting">Hi, {{ current_user.name }}</div>
             <div class="dropdown">
               <button
@@ -67,6 +76,14 @@
               </div>
             </div>
             {% else %}
+            <!-- Theme Toggle Button (also for guests) -->
+            <button
+              id="theme-toggle"
+              class="theme-toggle-btn"
+              title="Toggle theme"
+            >
+              <i class="fas fa-sun"></i>
+            </button>
             <!-- Links for guests -->
             <nav>
               <ul>
@@ -123,7 +140,7 @@
       </div>
     </footer>
 
-    <!-- Add JavaScript for dropdown toggle -->
+    <!-- Add JavaScript for dropdown and theme toggle -->
     <script>
       document.addEventListener("DOMContentLoaded", function () {
         const menuButton = document.getElementById("user-menu-button");
@@ -151,6 +168,42 @@
             }
           });
         }
+
+        // Theme Toggle JS
+        const themeToggleBtn = document.getElementById("theme-toggle");
+        const currentTheme = localStorage.getItem("theme");
+        const body = document.body;
+        const toggleIcon = themeToggleBtn.querySelector("i");
+
+        // Function to apply theme
+        function applyTheme(theme) {
+          if (theme === "dark") {
+            body.classList.add("dark-theme");
+            toggleIcon.classList.remove("fa-sun");
+            toggleIcon.classList.add("fa-moon");
+            localStorage.setItem("theme", "dark");
+          } else {
+            body.classList.remove("dark-theme");
+            toggleIcon.classList.remove("fa-moon");
+            toggleIcon.classList.add("fa-sun");
+            localStorage.setItem("theme", "light");
+          }
+        }
+
+        // Apply saved theme on initial load
+        if (currentTheme) {
+          applyTheme(currentTheme);
+        } else {
+          applyTheme("light"); // Default to light if no preference saved/detected
+        }
+
+        // Add event listener for the toggle button
+        themeToggleBtn.addEventListener("click", () => {
+          const newTheme = body.classList.contains("dark-theme")
+            ? "light"
+            : "dark";
+          applyTheme(newTheme);
+        });
       });
     </script>
   </body>
