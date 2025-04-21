@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard | Shware{% endblock %}
+
+{% block content %}
+<section class="dashboard">
+    <h2>Welcome to your Dashboard</h2>
+
+    <div class="profile-card">
+        <h3>Your Profile</h3>
+        {% if profile %}
+        <div class="profile-info">
+            <div class="avatar">
+                {% if profile.avatar_url %}
+                <img src="{{ profile.avatar_url }}" alt="Profile Avatar">
+                {% else %}
+                <div class="avatar-placeholder">{{ user.email[0]|upper }}</div>
+                {% endif %}
+            </div>
+
+            <div class="profile-details">
+                <p class="display-name">{{ profile.display_name or 'No display name set' }}</p>
+                <p class="email">{{ user.email }}</p>
+                <p class="bio">{{ profile.bio or 'No bio added yet' }}</p>
+                <p class="joined">Member since: {{ user.created_at }}</p>
+            </div>
+        </div>
+
+        <button class="btn btn-secondary edit-profile-btn">Edit Profile</button>
+        {% else %}
+        <p>You haven't set up your profile yet.</p>
+        <a href="#" class="btn btn-primary">Create Profile</a>
+        {% endif %}
+    </div>
+
+    <div class="dashboard-section">
+        <h3>Activity</h3>
+        <div class="activity-list">
+            <p>No recent activity</p>
+        </div>
+    </div>
+</section>
+
+<!-- Form Edit Profile -->
+<div class="profile-form-container" style="display: none;">
+    <form method="post" action="{{ url_for('update_profile') }}" class="profile-form">
+        {{ profile_form.csrf_token }}
+        <h3>Edit Profile</h3>
+
+        <div class="form-group">
+            <label for="display_name">Display Name</label>
+            <input type="text" id="display_name" name="display_name" value="{{ profile.display_name if profile else '' }}">
+        </div>
+
+        <div class="form-group">
+            <label for="bio">Bio</label>
+            <textarea id="bio" name="bio" rows="4">{{ profile.bio if profile else '' }}</textarea>
+        </div>
+
+        <div class="form-group">
+            <label for="avatar_url">Avatar URL</label>
+            <input type="url" id="avatar_url" name="avatar_url" value="{{ profile.avatar_url if profile else '' }}">
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Save Changes</button>
+            <button type="button" class="btn btn-secondary cancel-btn">Cancel</button>
+        </div>
+    </form>
+</div>
+
+<!-- Script để show/hide form edit -->
+<script>
+  const editBtn = document.querySelector('.edit-profile-btn');
+  const cancelBtn = document.querySelector('.cancel-btn');
+  const formContainer = document.querySelector('.profile-form-container');
+
+  if (editBtn) {
+    editBtn.addEventListener('click', () => {
+      formContainer.style.display = 'block';
+      window.scrollTo({ top: formContainer.offsetTop - 80, behavior: 'smooth' });
+    });
+  }
+
+  if (cancelBtn) {
+    cancelBtn.addEventListener('click', () => {
+      formContainer.style.display = 'none';
+    });
+  }
+</script>
+{% endblock %}

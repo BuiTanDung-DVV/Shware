@@ -8,6 +8,10 @@
       rel="stylesheet"
       href="{{ url_for('static', filename='style.css') }}"
     />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap"
+      rel="stylesheet"
+    />
   </head>
   <body>
     <!-- Header -->
@@ -79,7 +83,7 @@
     <!-- Footer -->
     <footer>
       <div class="container">
-        <p>&copy; Shware</p>
+        <p>&copy; {{ current_year or 2025 }} Shware. All rights reserved.</p>
       </div>
     </footer>
   </body>
