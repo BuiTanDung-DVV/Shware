@@ -3,6 +3,7 @@ serviceAccountKey.json
 google_drive_admin_sdk.json
 .venv1
 
+site.db
 __pycache__/
 *.py[cod]
 *.pyo
