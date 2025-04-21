@@ -139,9 +139,7 @@ def register():
         return redirect(url_for('main.home'))
 
     form = RegistrationForm()
-    print("Form data: 1")
     if form.validate_on_submit():
-        print("Form data: 2")  # Debugging line
         email = form.email.data
         password = form.password.data
         username = form.name.data if hasattr(form, 'name') else email.split('@')[0]

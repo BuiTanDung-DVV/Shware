@@ -8,7 +8,7 @@
   --error-color: #dc3545;
   --success-color: #198754;
   --warning-color: #ffc107;
-  --input-bg: #ecf0f1; /* Added for input background */
+  --input-bg: #ecf0f1;
 }
 
 * {
@@ -188,6 +188,7 @@ header nav .search-form button:hover {
 
 /* User Actions in Top Bar */
 .user-actions {
+  position: relative;
   display: flex;
   align-items: center;
   flex: 1;
@@ -195,9 +196,62 @@ header nav .search-form button:hover {
   padding: 0 1rem;
 }
 
+.user-greeting {
+  color: var(--light-color);
+  margin-right: 0.5rem;
+}
+
+.dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.dropdown-toggle {
+  background: none;
+  border: none;
+  color: var(--light-color);
+  cursor: pointer;
+  font-size: 1rem;
+  padding: 0.2rem 0;
+}
+
+.dropdown-menu {
+  display: none;
+  position: absolute;
+  right: 0;
+  top: 100%;
+  background-color: white;
+  min-width: 160px;
+  box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
+  z-index: 100;
+  border-radius: 4px;
+  padding: 0.5rem 0;
+}
+
+.dropdown-menu.show {
+  display: block;
+}
+
+.dropdown-item {
+  color: black !important;
+  padding: 0.5rem 1rem;
+  text-decoration: none;
+  display: block;
+  white-space: nowrap;
+}
+
+/* .user-actions .dropdown-menu .dropdown-item {
+  color: black !important;
+} */
+
+.dropdown-item:hover {
+  background-color: #f1f1f1;
+  color: var(--primary-color) !important;
+}
+
 .user-actions a {
-  color: var(--light-color); /* Ensure links are visible on dark background */
-  margin-left: 1rem; /* Add space between the action links */
+  color: var(--light-color);
+  /* margin-left: 1rem; */
   transition: color 0.3s;
 }
 
