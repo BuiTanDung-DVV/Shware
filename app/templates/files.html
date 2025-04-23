@@ -42,9 +42,7 @@
                         <td>{{ file.tags }}</td>
                         <td>{{ file.upload_date }}</td>
                         <td>
-                            <form action="{{ url_for('files.delete_file', doc_id=file.doc_id) }}" method="post" onsubmit="return confirm('Bạn có chắc chắn muốn xóa file này không?');">
-                                <button type="submit" class="btn btn-danger">🗑️ Xóa</button>
-                            </form>
+                            <a href="{{ file.download_url }}" class="btn btn-success" target="_blank">⬇️ Tải xuống</a>
                         </td>
                     </tr>
                     {% endfor %}
