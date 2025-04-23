@@ -5,11 +5,10 @@ from ..auth.forms import ProfileUpdateForm
 from .. import db # Import the SQLAlchemy db instance from the app package
 from ..models.user import User
 
-# Use the main app/templates folder by default
-dashboard_bp = Blueprint('dashboard', __name__)
+user_profile_bp = Blueprint('user_profile', __name__)
 db_firestore = firestore.client() # Rename Firestore client to avoid name clash
 
-@dashboard_bp.route('/profile', methods=['GET', 'POST'])
+@user_profile_bp.route('/profile', methods=['GET', 'POST'])
 @login_required
 def profile():
     form = ProfileUpdateForm()
@@ -81,7 +80,7 @@ def profile():
             flash('Password cannot be changed for accounts logged in via Google or other providers.', 'info')
 
 
-        return redirect(url_for('dashboard.profile'))
+        return redirect(url_for('user_profile.profile'))
     elif request.method == 'POST': 
         print("Form validation failed.")
         print("Errors:", form.errors)

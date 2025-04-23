@@ -21,7 +21,7 @@ block title %}User Profile{% endblock %} {% block content %}
       <h3>Update Profile</h3>
       <form
         method="POST"
-        action="{{ url_for('dashboard.profile') }}"
+        action="{{ url_for('user_profile.profile') }}"
         id="profile-update-form"
       >
         {{ form.hidden_tag() }}

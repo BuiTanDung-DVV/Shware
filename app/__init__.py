@@ -57,8 +57,8 @@ def create_app(config_class=Config):
     from app.auth.routes import auth_bp
     app.register_blueprint(auth_bp)
     
-    from app.dashboard.routes import dashboard_bp
-    app.register_blueprint(dashboard_bp)
+    from app.user_profile.routes import user_profile_bp
+    app.register_blueprint(user_profile_bp)
     
     from app.main.routes import main_bp
     app.register_blueprint(main_bp)
