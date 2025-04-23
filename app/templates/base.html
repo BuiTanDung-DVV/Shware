@@ -112,6 +112,7 @@
           <nav>
             <ul>
               {% if current_user.is_authenticated %}
+              <li><a href="{{ url_for('main.home') }}">Home</a></li>
               <li><a href="{{ url_for('files.list_files') }}">Files</a></li>
               <li><a href="{{ url_for('upload.upload_file') }}">Upload</a></li>
               {% endif %}

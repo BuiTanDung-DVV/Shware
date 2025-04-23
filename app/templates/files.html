@@ -42,7 +42,7 @@
                         <td>{{ file.tags }}</td>
                         <td>{{ file.upload_date }}</td>
                         <td>
-                            <form action="{{ url_for('files.delete_file', doc_id=file.id) }}" method="post" onsubmit="return confirm('Bạn có chắc chắn muốn xóa file này không?');">
+                            <form action="{{ url_for('files.delete_file', doc_id=file.doc_id) }}" method="post" onsubmit="return confirm('Bạn có chắc chắn muốn xóa file này không?');">
                                 <button type="submit" class="btn btn-danger">🗑️ Xóa</button>
                             </form>
                         </td>
@@ -50,6 +50,19 @@
                     {% endfor %}
                 </tbody>
             </table>
+        </div>
+
+        <!-- Pagination Controls -->
+        <div class="pagination">
+            {% if page > 1 %}
+            <a href="{{ url_for('files.list_files', page=page - 1) }}">⬅️ Trang trước</a>
+            {% endif %}
+
+            <span>Trang {{ page }} trên {{ total_pages }}</span>
+
+            {% if page < total_pages %}
+            <a href="{{ url_for('files.list_files', page=page + 1) }}">Trang tiếp ➡️</a>
+            {% endif %}
         </div>
         {% else %}
         <div class="flash warning">📂 Chưa có tệp nào được tải lên.</div>

@@ -37,6 +37,19 @@
         </div>
         {% endfor %}
     </div>
+
+    <!-- Pagination Controls -->
+    <div class="pagination">
+        {% if page > 1 %}
+        <a href="{{ url_for('main.home', page=page - 1) }}">⬅️ Trang trước</a>
+        {% endif %}
+
+        <span>Trang {{ page }} trên {{ total_pages }}</span>
+
+        {% if page < total_pages %}
+        <a href="{{ url_for('main.home', page=page + 1) }}">Trang tiếp ➡️</a>
+        {% endif %}
+    </div>
     {% else %}
     <div class="alert alert-info text-center">Không có tệp nào được tải lên.</div>
     {% endif %}

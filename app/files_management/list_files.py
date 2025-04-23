@@ -22,8 +22,10 @@ db = firestore.client()
 @files_bp.route('/files')
 def list_files():
     try:
+        page = request.args.get('page', 1, type=int)
+        per_page = 5
         files = []
-        docs = db.collection('files').stream()
+        docs = db.collection('files').offset((page - 1) * per_page).limit(per_page).stream()
         for doc in docs:
             data = doc.to_dict()
             files.append({
@@ -40,11 +42,17 @@ def list_files():
                 'download_url': data.get('download_url'),
                 'drive_file_id': data.get('drive_file_id')
             })
+
+        # Get total file count for pagination
+        total_files = db.collection('files').get()
+        total_pages = (len(total_files) + per_page - 1) // per_page
+
     except Exception as e:
         flash(f'Không thể tải danh sách tệp: {str(e)}')
         files = []
+        total_pages = 1
 
-    return render_template('files.html', files=files)
+    return render_template('files.html', files=files, page=page, total_pages=total_pages)
 
 @files_bp.route('/delete/<doc_id>', methods=['POST'])
 def delete_file(doc_id):

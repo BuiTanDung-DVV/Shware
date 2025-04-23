@@ -60,12 +60,12 @@ def create_post():
         # Upload ảnh thumbnail nếu có
         thumbnail_url = ''
         if thumbnail_file and allowed_ext(thumbnail_file.filename, ALLOWED_IMG_EXT):
-        filename = secure_filename(thumbnail_file.filename)
-        thumb_id, thumb_link = upload_to_drive(thumbnail_file.stream, filename)
-        thumbnail_url = thumb_link
-        # Upload ảnh thumbnail lên Cloudinary
-        upload_result = cloudinary.uploader.upload(thumbnail_file)
-        thumbnail_url = upload_result['secure_url']  # Lấy URL an toàn từ Cloudinary
+            filename = secure_filename(thumbnail_file.filename)
+            thumb_id, thumb_link = upload_to_drive(thumbnail_file.stream, filename)
+            thumbnail_url = thumb_link
+            # Upload ảnh thumbnail lên Cloudinary
+            upload_result = cloudinary.uploader.upload(thumbnail_file)
+            thumbnail_url = upload_result['secure_url']  # Lấy URL an toàn từ Cloudinary
 
         # Upload file đính kèm nếu có
         file_info = {}

@@ -14,8 +14,14 @@ db = firestore.client()
 @main_bp.route('/')
 def home():
     try:
+        page = request.args.get('page', 1, type=int)
+        per_page = 5
         files = []
-        docs = db.collection('files').order_by('upload_date', direction=firestore.Query.DESCENDING).stream()
+        docs = db.collection('files') \
+            .order_by('upload_date', direction=firestore.Query.DESCENDING) \
+            .offset((page - 1) * per_page) \
+            .limit(per_page) \
+            .stream()
         for doc in docs:
             data = doc.to_dict()
             files.append({
@@ -30,11 +36,14 @@ def home():
                 'upload_date': data.get('upload_date'),
                 'download_url': data.get('download_url')
             })
+        total_files = db.collection('files').get()
+        total_pages = (len(total_files) + per_page - 1) // per_page
+
     except Exception as e:
         flash(f'Lỗi khi tải danh sách tệp: {str(e)}', 'error')
         files = []
-
-    return render_template('home.html', files=files)
+        total_pages = 1
+    return render_template('home.html', files=files, page=page, total_pages=total_pages)
 
 @main_bp.route('/search')
 def search():
