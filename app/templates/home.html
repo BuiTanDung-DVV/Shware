@@ -22,22 +22,15 @@
             class="featured-file-card-link"
           >
             <div class="featured-file-card">
-              <div class="featured-file-content">
-                <h3 class="featured-file-title">{{ featured_file.title }}</h3>
-                <p class="featured-file-description">
-                  {{ featured_file.description }}
-                </p>
-                <div class="featured-file-tags">
-                  {% if featured_file.tags %} {% for tag in
-                  featured_file.tags.split(',') %}
-                  <span class="featured-file-tag">{{ tag.strip() }}</span>
-                  {% endfor %} {% endif %}
-                </div>
+              <div class="featured-file-thumbnail">
+                <img
+                  src="{{ featured_file.thumbnail_url }}"
+                  alt="{{ featured_file.title }}"
+                  class="featured-thumbnail-img"
+                />
               </div>
-              <div class="featured-file-action">
-                <span class="featured-file-size">
-                  {{ featured_file.file_size | format_filesize }}
-                </span>
+              <div class="featured-file-title-container">
+                <h3 class="featured-file-title">{{ featured_file.title }}</h3>
               </div>
             </div>
           </a>

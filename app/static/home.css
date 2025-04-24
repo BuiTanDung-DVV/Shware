@@ -22,7 +22,7 @@
 
 .featured-slider {
   position: relative;
-  min-height: 250px;
+  min-height: 350px; /* Tăng chiều cao để hiển thị thumbnail đẹp hơn */
 }
 
 .slide {
@@ -55,32 +55,59 @@
 }
 
 .featured-file-card {
+  position: relative;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
   height: 100%;
   max-width: 800px;
   width: 90%;
-  padding: 1.5rem;
-  background-color: var(--card-bg);
   box-sizing: border-box;
   margin: 0 auto;
   border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 114, 255, 0.06);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  padding: 0;
+  background-color: var(--card-bg);
 }
 
-.featured-file-content {
-  flex-grow: 1;
-  padding: 0 15px;
-  text-align: center;
+.featured-file-thumbnail {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+}
+
+.featured-thumbnail-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.featured-file-card:hover .featured-thumbnail-img {
+  transform: scale(1.05);
+}
+
+.featured-file-title-container {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  padding: 15px;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.7));
+  width: 100%;
 }
 
 .featured-file-title {
   font-size: 1.3rem;
   font-weight: 600;
-  margin-bottom: 0.5rem;
-  color: var(--primary-color);
-  text-align: center;
+  margin: 0;
+  color: #fff;
+  text-align: left;
+  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .featured-file-description {
@@ -90,6 +117,7 @@
   font-size: 0.95rem;
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
   line-height: 1.4;
@@ -308,7 +336,7 @@ body.dark-theme .indicator.active {
 }
 
 .fa-star {
-  color: #ffc107;
+  color: #ffc107 !important;
   margin-right: 5px;
 }
 
@@ -325,6 +353,7 @@ body.dark-theme .indicator.active {
   color: var(--text-color);
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
   line-height: 1.3;
@@ -425,6 +454,7 @@ body.dark-theme .indicator.active {
   .featured-file-description {
     font-size: 0.9rem;
     -webkit-line-clamp: 2;
+    line-clamp: 2;
   }
 
   .file-list {
@@ -443,5 +473,6 @@ body.dark-theme .indicator.active {
   .file-description {
     font-size: 0.85rem;
     -webkit-line-clamp: 2;
+    line-clamp: 2;
   }
 }

@@ -812,6 +812,7 @@ body.dark-theme .profile-update-form .text-muted {
 .file-features-box,
 .file-description,
 .download-section {
+  margin: 20px 0;
   background-color: var(--card-bg);
   border: 1px solid var(--border-color);
   border-radius: 8px;
@@ -843,13 +844,13 @@ body.dark-theme .profile-update-form .text-muted {
 body.dark-theme .file-features-box,
 body.dark-theme .file-description,
 body.dark-theme .download-section {
-    background-color: var(--card-bg);
-    border-color: var(--border-color);
+  background-color: var(--card-bg);
+  border-color: var(--border-color);
 }
 
 body.dark-theme .file-image-section {
-    background-color: var(--light-color);
-    border-color: var(--border-color);
+  background-color: var(--light-color);
+  border-color: var(--border-color);
 }
 
 @media (max-width: 768px) {

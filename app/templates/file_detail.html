@@ -49,7 +49,7 @@
   <!-- Image Section -->
   <div class="file-image-section mb-4">
     <img
-      src="{{ file.image_url or url_for('static', filename='default_avatar.jpg') }}"
+      src="{{ file.image_url or url_for('static', filename='images/default_avatar.jpg') }}"
       alt="{{ file.title }} Image"
       class="file-detail-image"
     />
@@ -87,7 +87,7 @@
           {% endfor %} {% endif %}
         </span>
         <span
-          >({{ file.avg_rating|round(1) }} / 5 - {{ file.total_reviews or 0 }}
+          >({{ file.avg_rating|round(1) }} / 5.0 - {{ file.total_reviews or 0 }}
           đánh giá)</span
         >
       </p>
@@ -106,14 +106,6 @@
   <!-- Review Section -->
   <div class="review-section card mb-4">
     <div class="card-body">
-      <h4 class="card-title">
-        ⭐ Đánh giá tệp này
-        <span class="average-rating-text">
-          (Hiện tại: {{ file.avg_rating|round(1) }} / 5 - {{ file.total_reviews
-          or 0 }} đánh giá)
-        </span>
-      </h4>
-
       {% if current_user.is_authenticated %}
       <div class="review-box">
         <form
@@ -123,7 +115,7 @@
           id="review-form"
         >
           <div class="form-group">
-            <label>Đánh giá của bạn:</label>
+            <label>⭐ Đánh giá của bạn:</label>
             <div class="star-container">
               <i class="fas fa-star star" data-index="1"></i>
               <i class="fas fa-star star" data-index="2"></i>
@@ -178,12 +170,6 @@
       </p>
       {% endif %}
     </div>
-  </div>
-
-  <div class="text-center mt-4">
-    <a href="{{ url_for('files.list_files') }}" class="btn"
-      >↩ Quay lại danh sách</a
-    >
   </div>
 </div>
 
