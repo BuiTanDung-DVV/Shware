@@ -115,10 +115,6 @@
     <div class="alert alert-info text-center fs-5">Không có tệp nào được tải lên{% if selected_tag %} với tag "{{ selected_tag }}"{% endif %}.</div>
 
     {% endif %}
-  </div>
-  {% else %}
-  <div class="alert alert-info text-center">Không có tệp nào được tải lên.</div>
-  {% endif %}
 </div>
 
 <link rel="stylesheet" href="{{ url_for('static', filename='home.css') }}">

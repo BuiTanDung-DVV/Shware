@@ -47,6 +47,7 @@ def login():
         try:
             # Sign in with email and password using Firebase Auth
             auth = firebase_admin.auth
+            #TODO: Use client-side SDK for password verification instead of server-side
             # Note: Firebase Admin SDK doesn't verify passwords directly.
             # This assumes the user exists in Firebase Auth.
             # For actual password verification, you'd typically use a client-side SDK
