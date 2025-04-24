@@ -4,73 +4,56 @@ Shware{% endblock %} {% block content %}
   <h2 class="mb-4 text-center">🔍 Kết quả tìm kiếm cho: "{{ query }}"</h2>
 
   {% if not current_user.is_authenticated %}
-  <div class="alert alert-warning text-center">
+  <div class="alert alert-warning text-center fs-5">
     🔒 Vui lòng
     <a href="{{ url_for('auth.login') }}" class="alert-link">đăng nhập</a> để có
     thể tải file.
   </div>
   {% endif %} {% if results %}
-  <div class="row">
-    {% for file in results %}
-    <div class="col-md-6 col-lg-4">
-      <div class="card mb-4 shadow-sm h-100">
-        <div class="card-body d-flex flex-column">
-          <h5 class="card-title">
-            <a href="{{ url_for('files.file_detail', doc_id=file.doc_id) }}"
-              >{{ file.title }}</a
-            >
-          </h5>
-          <p class="card-text text-truncate" title="{{ file.description }}">
+  <div class="file-list mt-4">
+    {# Use file-list class for grid layout #} {% for file in results %}
+    <a
+      href="{{ url_for('files.file_detail', doc_id=file.doc_id) }}"
+      class="file-card-link"
+    >
+      <div class="file-card">
+        <div class="file-info">
+          <div class="file-header">
+            <h5 class="file-title">{{ file.title }}</h5>
+            <div class="file-tags">
+              {% if file.tags %} {# Assuming file.tags is already a list from
+              Firestore #} {% for tag in file.tags %} {% if tag.strip() %}
+              <span class="file-tag">{{ tag.strip() }}</span>
+              {% endif %} {% endfor %} {% endif %}
+            </div>
+          </div>
+          <p class="file-description" title="{{ file.description }}">
             {{ file.description }}
           </p>
-          <p class="mb-2">
-            <strong>Tags:</strong>
-            {% for tag in file.tags.split(',') %} {% if tag.strip() %}
-            <span class="badge bg-light text-dark">{{ tag.strip() }}</span>
-            {% endif %} {% endfor %}
-          </p>
-          <p class="card-text">
-            <small class="text-muted">Tác giả: {{ file.author }}</small>
-          </p>
-          <p class="card-text">
-            <small class="text-muted"
-              >Ngày tải lên: {{ file.upload_date.strftime('%Y-%m-%d %H:%M') if
-              file.upload_date else 'N/A' }}</small
-            >
-          </p>
-
-          <div class="mt-auto">
-            {% if current_user.is_authenticated %}
-            <a
-              href="{{ file.download_url }}"
-              class="btn btn-primary w-100"
-              target="_blank"
-              >⬇️ Tải xuống</a
-            >
-            {% else %}
-            <a
-              href="{{ url_for('auth.login') }}"
-              class="btn btn-secondary w-100"
-              >🔒 Đăng nhập để tải</a
-            >
-            {% endif %}
-          </div>
+        </div>
+        <div class="file-action">
+          <span class="file-size-info"
+            >{{ file.file_size | format_filesize }}</span
+          >
         </div>
       </div>
-    </div>
+    </a>
     {% endfor %}
   </div>
-  {% else %} {% if query %} {# Only show 'no results' if a query was actually
-  made #}
-  <div class="alert alert-info text-center">
+  {% else %} {% if query %}
+  <div class="alert alert-info text-center fs-5 mt-4">
     Không tìm thấy tệp nào phù hợp với tìm kiếm của bạn.
   </div>
   {% endif %} {% endif %}
 
-  <div class="text-center mt-4">
+  <div class="text-center mt-5">
     <a href="{{ url_for('main.home') }}" class="btn btn-secondary"
       >⬅️ Quay lại Trang chủ</a
     >
   </div>
 </div>
+
+{# Link the home.css for grid styles #}
+<link rel="stylesheet" href="{{ url_for('static', filename='home.css') }}" />
+
 {% endblock %}

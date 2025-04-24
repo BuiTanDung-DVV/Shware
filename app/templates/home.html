@@ -1,205 +1,227 @@
 {% extends 'base.html' %} {% block content %}
 <div class="container mt-5">
-    <h2 class="mb-4 text-center display-5">📂 Kho Tài Liệu Chia Sẻ</h2>
+  <h2 class="mb-4 text-center display-5">📂 Kho Tài Liệu Chia Sẻ</h2>
 
-    {% if not current_user.is_authenticated %}
-    <div class="alert alert-warning text-center fs-5">
-        🔒 Vui lòng <a href="{{ url_for('auth.login') }}" class="alert-link">đăng nhập</a> để có thể tải file.
-    </div>
-    {% endif %}
+  {% if not current_user.is_authenticated %}
+  <div class="alert alert-warning text-center fs-5">
+    🔒 Vui lòng
+    <a href="{{ url_for('auth.login') }}" class="alert-link">đăng nhập</a> để có
+    thể tải file.
+  </div>
+  {% endif %}
 
-    <!-- Featured Files Slider Section -->
-    <div class="featured-files-section mb-5">
-        <h4 class="mb-3">🔥 Tài liệu mới cập nhật</h4>
-        <div class="featured-slider-container">
-            <div class="featured-slider">
-                {% for featured_file in latest_files %}
-                <div class="slide {% if loop.index == 1 %}active{% endif %}">
-                    <div class="featured-file-card">
-                        <div class="featured-file-content">
-                            <h3 class="featured-file-title">
-                              <a href="{{ url_for('files.file_detail', doc_id=file.doc_id) }}">
-                              {{ featured_file.title }}
-                              </a>
-                          </h3>
-                            <p class="featured-file-description">{{ featured_file.description }}</p>
-                            <div class="featured-file-tags">
-                                {% if featured_file.tags %}
-                                    {% for tag in featured_file.tags.split(',') %}
-                                    <span class="featured-file-tag">{{ tag.strip() }}</span>
-                                    {% endfor %}
-                                {% endif %}
-                            </div>
-                        </div>
-                        <div class="featured-file-action">
-                            {% if current_user.is_authenticated %}
-                                <a href="{{ featured_file.download_url }}" class="featured-download-btn" target="_blank">⬇️ Tải xuống</a>
-                            {% else %}
-                                <a href="{{ url_for('auth.login') }}" class="featured-login-btn">🔒 Đăng nhập</a>
-                            {% endif %}
-                        </div>
-                    </div>
+  <!-- Featured Files Slider Section -->
+  <div class="featured-files-section mb-5">
+    <h4 class="mb-3">🔥 Tài liệu mới cập nhật</h4>
+    <div class="featured-slider-container">
+      <div class="featured-slider">
+        {% for featured_file in latest_files %}
+        <div class="slide {% if loop.index == 1 %}active{% endif %}">
+          <a
+            href="{{ url_for('files.file_detail', doc_id=featured_file.doc_id) }}"
+            class="featured-file-card-link"
+          >
+            <div class="featured-file-card">
+              <div class="featured-file-content">
+                <h3 class="featured-file-title">{{ featured_file.title }}</h3>
+                <p class="featured-file-description">
+                  {{ featured_file.description }}
+                </p>
+                <div class="featured-file-tags">
+                  {% if featured_file.tags %} {% for tag in
+                  featured_file.tags.split(',') %}
+                  <span class="featured-file-tag">{{ tag.strip() }}</span>
+                  {% endfor %} {% endif %}
                 </div>
-                {% endfor %}
+              </div>
+              <div class="featured-file-action">
+                <span class="featured-file-size">
+                  {{ featured_file.file_size | format_filesize }}
+                </span>
+              </div>
             </div>
-            <!-- Slider Controls -->
-            <button class="slider-control prev-slide">❮</button>
-            <button class="slider-control next-slide">❯</button>
-            <!-- Slider Indicators -->
-            <div class="slider-indicators">
-                {% for featured_file in latest_files %}
-                <span class="indicator {% if loop.index == 1 %}active{% endif %}" data-index="{{ loop.index0 }}"></span>
-                {% endfor %}
-            </div>
+          </a>
         </div>
-    </div>
-
-    <!-- Tag Filter Section -->
-    <div class="mb-4 tag-filter-section">
-        <h5 class="mb-3">Lọc theo tags:</h5>
-        <div class="d-flex flex-wrap gap-2">
-            <a href="{{ url_for('main.home') }}" class="tag-filter-btn {% if not selected_tag %}active{% endif %}">
-                Tất cả
-            </a>
-            {% for tag in all_tags %}
-            <a href="{{ url_for('main.home', tag=tag) }}" class="tag-filter-btn {% if selected_tag == tag %}active{% endif %}">
-                {{ tag }}
-            </a>
-            {% endfor %}
-        </div>
-    </div>
-
-    {% if files %}
-    <div class="file-list">
-        {% for file in files %}
-        <div class="file-card">
-            <div class="file-info">
-                <div class="file-header">
-                    <h5 class="file-title">
-                       <a href="{{ url_for('files.file_detail', doc_id=file.doc_id) }}"
-                        >{{ file.title }}</a>
-                    </h5>
-                    <div class="file-tags">
-                        {% if file.tags %}
-                            {% for tag in file.tags.split(',') %}
-                            <span class="file-tag">{{ tag.strip() }}</span>
-                            {% endfor %}
-                        {% endif %}
-                    </div>
-                </div>
-                <p class="file-description" title="{{ file.description }}">{{ file.description }}</p>
-            </div>
-            <div class="file-action">
-                {% if current_user.is_authenticated %}
-                    <a href="{{ file.download_url }}" class="download-btn" target="_blank">⬇️ Tải xuống</a>
-                {% else %}
-                    <a href="{{ url_for('auth.login') }}" class="login-btn">🔒 Đăng nhập</a>
-                {% endif %}
-            </div>
-
-        </div>
+        {% endfor %}
+      </div>
+      <!-- Slider Controls -->
+      <button class="slider-control prev-slide">❮</button>
+      <button class="slider-control next-slide">❯</button>
+      <!-- Slider Indicators -->
+      <div class="slider-indicators">
+        {% for featured_file in latest_files %}
+        <span
+          class="indicator {% if loop.index == 1 %}active{% endif %}"
+          data-index="{{ loop.index0 }}"
+        ></span>
+        {% endfor %}
       </div>
     </div>
+  </div>
+
+  <!-- Tag Filter Section -->
+  <div class="mb-4 tag-filter-section">
+    <h5 class="mb-3">Lọc theo tags:</h5>
+    <div class="d-flex flex-wrap gap-2">
+      <a
+        href="{{ url_for('main.home') }}"
+        class="tag-filter-btn {% if not selected_tag %}active{% endif %}"
+      >
+        Tất cả
+      </a>
+      {% for tag in all_tags %}
+      <a
+        href="{{ url_for('main.home', tag=tag) }}"
+        class="tag-filter-btn {% if selected_tag == tag %}active{% endif %}"
+      >
+        {{ tag }}
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+
+  {% if files %}
+  <div class="file-list">
+    {% for file in files %}
+    <a
+      href="{{ url_for('files.file_detail', doc_id=file.doc_id) }}"
+      class="file-card-link"
+    >
+      <div class="file-card">
+        <div class="file-info">
+          <div class="file-header">
+            <h5 class="file-title">{{ file.title }}</h5>
+            <div class="file-tags">
+              {% if file.tags %} {% for tag in file.tags.split(',') %}
+              <span class="file-tag">{{ tag.strip() }}</span>
+              {% endfor %} {% endif %}
+            </div>
+          </div>
+          <p class="file-description" title="{{ file.description }}">
+            {{ file.description }}
+          </p>
+        </div>
+        <div class="file-action">
+          <span class="file-size-info"
+            >{{ file.file_size | format_filesize }}</span
+          >
+        </div>
+      </div>
+    </a>
     {% endfor %}
   </div>
-    <div class="pagination text-center mt-4 fs-5">
-        {% if page > 1 %}
-        <a href="{{ url_for('main.home', page=page - 1, tag=selected_tag) }}" class="page-link">⬅️ Trang trước</a>
-        {% endif %}
-        <span class="mx-3 page-info">Trang {{ page }} trên {{ total_pages }}</span>
-        {% if page < total_pages %}
-        <a href="{{ url_for('main.home', page=page + 1, tag=selected_tag) }}" class="page-link">Trang tiếp ➡️</a>
-        {% endif %}
-    </div>
-    {% else %}
-    <div class="alert alert-info text-center fs-5">Không có tệp nào được tải lên{% if selected_tag %} với tag "{{ selected_tag }}"{% endif %}.</div>
 
+  <div class="pagination text-center mt-4 fs-5">
+    {% if page > 1 %}
+    <a
+      href="{{ url_for('main.home', page=page - 1, tag=selected_tag) }}"
+      class="page-link"
+      >⬅️ Trang trước</a
+    >
     {% endif %}
+    <span class="mx-3 page-info">Trang {{ page }} trên {{ total_pages }}</span>
+    {% if page < total_pages %}
+    <a
+      href="{{ url_for('main.home', page=page + 1, tag=selected_tag) }}"
+      class="page-link"
+      >Trang tiếp ➡️</a
+    >
+    {% endif %}
+  </div>
+  {% else %}
+  <div class="alert alert-info text-center fs-5">
+    Không có tệp nào được tải lên{% if selected_tag %} với tag "{{ selected_tag
+    }}"{% endif %}.
+  </div>
+  {% endif %}
 </div>
 
-<link rel="stylesheet" href="{{ url_for('static', filename='home.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='home.css') }}" />
 
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Slider functionality
-        const slides = document.querySelectorAll('.slide');
-        const indicators = document.querySelectorAll('.indicator');
-        const prevBtn = document.querySelector('.prev-slide');
-        const nextBtn = document.querySelector('.next-slide');
-        let currentSlide = 0;
-        let slideInterval;
+  document.addEventListener("DOMContentLoaded", function () {
+    // Slider functionality
+    const slides = document.querySelectorAll(".slide");
+    const indicators = document.querySelectorAll(".indicator");
+    const prevBtn = document.querySelector(".prev-slide");
+    const nextBtn = document.querySelector(".next-slide");
+    let currentSlide = 0;
+    let slideInterval;
 
-        // Start auto-slider
-        startSlideTimer();
+    // Start auto-slider
+    startSlideTimer();
 
-        // Initialize slider
-        function showSlide(index) {
-            // Remove active class from all slides and indicators
-            slides.forEach(slide => slide.classList.remove('active'));
-            indicators.forEach(indicator => indicator.classList.remove('active'));
+    // Initialize slider
+    function showSlide(index) {
+      // Remove active class from all slides and indicators
+      slides.forEach((slide) => slide.classList.remove("active"));
+      indicators.forEach((indicator) => indicator.classList.remove("active"));
 
-            // Add active class to current slide and indicator
-            slides[index].classList.add('active');
-            indicators[index].classList.add('active');
+      // Add active class to current slide and indicator
+      slides[index].classList.add("active");
+      indicators[index].classList.add("active");
 
-            // Update current slide index
-            currentSlide = index;
-        }
+      // Update current slide index
+      currentSlide = index;
+    }
 
-        // Move to next slide
-        function nextSlide() {
-            let nextIndex = currentSlide + 1;
-            if (nextIndex >= slides.length) {
-                nextIndex = 0;
-            }
-            showSlide(nextIndex);
-        }
+    // Move to next slide
+    function nextSlide() {
+      let nextIndex = currentSlide + 1;
+      if (nextIndex >= slides.length) {
+        nextIndex = 0;
+      }
+      showSlide(nextIndex);
+    }
 
-        // Move to previous slide
-        function prevSlide() {
-            let prevIndex = currentSlide - 1;
-            if (prevIndex < 0) {
-                prevIndex = slides.length - 1;
-            }
-            showSlide(prevIndex);
-        }
+    // Move to previous slide
+    function prevSlide() {
+      let prevIndex = currentSlide - 1;
+      if (prevIndex < 0) {
+        prevIndex = slides.length - 1;
+      }
+      showSlide(prevIndex);
+    }
 
-        // Start the timer for auto-sliding
-        function startSlideTimer() {
-            stopSlideTimer(); // Clear any existing timers
-            slideInterval = setInterval(nextSlide, 5000); // Change slide every 5 seconds
-        }
+    // Start the timer for auto-sliding
+    function startSlideTimer() {
+      stopSlideTimer(); // Clear any existing timers
+      slideInterval = setInterval(nextSlide, 5000); // Change slide every 5 seconds
+    }
 
-        // Stop the timer
-        function stopSlideTimer() {
-            if (slideInterval) {
-                clearInterval(slideInterval);
-            }
-        }
+    // Stop the timer
+    function stopSlideTimer() {
+      if (slideInterval) {
+        clearInterval(slideInterval);
+      }
+    }
 
-        // Event listeners
-        prevBtn.addEventListener('click', function() {
-            prevSlide();
-            startSlideTimer(); // Reset timer when manually changing slides
-        });
-
-        nextBtn.addEventListener('click', function() {
-            nextSlide();
-            startSlideTimer(); // Reset timer when manually changing slides
-        });
-
-        // Add click events to indicators
-        indicators.forEach((indicator, index) => {
-            indicator.addEventListener('click', function() {
-                showSlide(index);
-                startSlideTimer(); // Reset timer when manually changing slides
-            });
-        });
-
-        // Reset timer when interacting with the slider
-        document.querySelector('.featured-slider-container').addEventListener('mouseenter', stopSlideTimer);
-        document.querySelector('.featured-slider-container').addEventListener('mouseleave', startSlideTimer);
+    // Event listeners
+    prevBtn.addEventListener("click", function () {
+      prevSlide();
+      startSlideTimer(); // Reset timer when manually changing slides
     });
+
+    nextBtn.addEventListener("click", function () {
+      nextSlide();
+      startSlideTimer(); // Reset timer when manually changing slides
+    });
+
+    // Add click events to indicators
+    indicators.forEach((indicator, index) => {
+      indicator.addEventListener("click", function () {
+        showSlide(index);
+        startSlideTimer(); // Reset timer when manually changing slides
+      });
+    });
+
+    // Reset timer when interacting with the slider
+    document
+      .querySelector(".featured-slider-container")
+      .addEventListener("mouseenter", stopSlideTimer);
+    document
+      .querySelector(".featured-slider-container")
+      .addEventListener("mouseleave", startSlideTimer);
+  });
 </script>
 {% endblock %}
-
