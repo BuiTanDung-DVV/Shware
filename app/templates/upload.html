@@ -22,16 +22,27 @@
                 <input type="file" id="file" name="file" accept=".zip, .rar" required>
             </div>
 
+            <!-- Thumbnail Upload -->
+            <div class="form-group">
+                <label for="thumbnail">Ảnh nền (thumbnail)</label>
+                <div class="thumbnail-preview-container">
+                    <img id="thumbnail-preview" src="/static/images/default-thumbnail.png" alt="Preview">
+                </div>
+                <input type="file" id="thumbnail" name="thumbnail" accept="image/*">
+                <small class="form-text">Hình ảnh đại diện cho file của bạn (tùy chọn)</small>
+            </div>
+
             <!-- Title -->
             <div class="form-group">
                 <label for="title">Tiêu đề *</label>
                 <input type="text" id="title" name="title" placeholder="Nhập tiêu đề tệp" required>
             </div>
 
-            <!-- Author -->
+            <!-- Author - Auto-filled and readonly -->
             <div class="form-group">
-                <label for="author">Tác giả *</label>
-                <input type="text" id="author" name="author" placeholder="Nhập tên tác giả" required>
+                <label for="author">Tác giả</label>
+                <input type="text" id="author" name="author" value="{{ current_user.name }}" readonly>
+                <small class="form-text">Tự động lấy từ tài khoản của bạn</small>
             </div>
 
             <!-- Description -->
@@ -40,10 +51,33 @@
                 <textarea id="description" name="description" rows="3" placeholder="Nhập mô tả tệp" required></textarea>
             </div>
 
-            <!-- Tags -->
+            <!-- Tags as checkboxes - Improved UI -->
             <div class="form-group">
-                <label for="tags">Thẻ (cách nhau bằng dấu phẩy) *</label>
-                <input type="text" id="tags" name="tags" placeholder="Ví dụ: công nghệ, giáo dục, phần mềm" required>
+                <label>Thẻ (chọn ít nhất một) *</label>
+                <div class="tags-container">
+                    <div class="tag-item">
+                        <input type="checkbox" id="tag-congnghe" name="tags" value="công nghệ">
+                        <label for="tag-congnghe">Công nghệ</label>
+                    </div>
+                    <div class="tag-item">
+                        <input type="checkbox" id="tag-giaoduc" name="tags" value="giáo dục">
+                        <label for="tag-giaoduc">Giáo dục</label>
+                    </div>
+                    <div class="tag-item">
+                        <input type="checkbox" id="tag-phanmem" name="tags" value="phần mềm">
+                        <label for="tag-phanmem">Phần mềm</label>
+                    </div>
+                    <div class="tag-item">
+                        <input type="checkbox" id="tag-tailieukhac" name="tags" value="tài liệu khác">
+                        <label for="tag-tailieukhac">Tài liệu khác</label>
+                    </div>
+                </div>
+                <!-- Custom tag input -->
+                <div class="custom-tag">
+                    <input type="text" id="custom-tag" placeholder="Thêm thẻ tùy chỉnh">
+                    <button type="button" id="add-custom-tag" class="btn btn-sm">+</button>
+                </div>
+                <div id="custom-tags-container"></div>
             </div>
 
             <!-- Submit Button -->
@@ -57,4 +91,185 @@
         </div>
     </div>
 </main>
+
+<style>
+.thumbnail-preview-container {
+    width: 200px;
+    height: 150px;
+    border: 1px dashed var(--border-color);
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    background-color: var(--light-color);
+}
+
+#thumbnail-preview {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+/* Cải thiện giao diện tags */
+.tags-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 10px;
+}
+
+.tag-item {
+    display: flex;
+    align-items: center;
+    background-color: var(--light-color);
+    padding: 3px 8px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    color: var(--text-color); /* Sử dụng biến CSS cho màu chữ */
+    border: 1px solid var(--border-color);
+}
+
+.tag-item:hover {
+    background-color: var(--dropdown-item-hover-bg);
+    color: var(--dropdown-item-hover-text);
+}
+
+.tag-item input[type="checkbox"] {
+    margin-right: 4px;
+}
+
+.tag-item label {
+    cursor: pointer;
+    color: inherit; /* Kế thừa màu từ phần tử cha */
+}
+
+.custom-tag {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 8px;
+}
+
+#custom-tag {
+    flex-grow: 1;
+    padding: 4px 8px;
+    font-size: 0.9rem;
+    background-color: var(--input-bg);
+    color: var(--text-color);
+    border: 1px solid var(--input-border);
+    border-radius: 4px;
+}
+
+#add-custom-tag {
+    padding: 2px 8px;
+    font-size: 0.9rem;
+    background-color: var(--light-color);
+    border: 1px solid var(--border-color);
+    color: var(--text-color);
+}
+
+#custom-tags-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 6px;
+}
+
+.custom-tag-item {
+    background-color: var(--primary-color);
+    padding: 3px 8px;
+    border-radius: 3px;
+    display: flex;
+    align-items: center;
+    font-size: 0.9rem;
+    color: white; /* Sử dụng màu trắng cho tag tùy chỉnh để nổi bật */
+}
+
+.remove-tag {
+    margin-left: 4px;
+    cursor: pointer;
+    color: white;
+    font-weight: bold;
+}
+
+/* Styling for readonly author field */
+input[readonly] {
+    background-color: var(--light-color);
+    border: 1px solid var(--border-color);
+    color: var(--text-color);
+}
+
+.form-text {
+    color: var(--text-color);
+    opacity: 0.7;
+    font-size: 0.8rem;
+    margin-top: 3px;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Thumbnail preview
+    const thumbnailInput = document.getElementById('thumbnail');
+    const thumbnailPreview = document.getElementById('thumbnail-preview');
+
+    thumbnailInput.addEventListener('change', function() {
+        const file = this.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                thumbnailPreview.src = e.target.result;
+            }
+            reader.readAsDataURL(file);
+        }
+    });
+
+    // Custom tags functionality
+    const customTagInput = document.getElementById('custom-tag');
+    const addCustomTagBtn = document.getElementById('add-custom-tag');
+    const customTagsContainer = document.getElementById('custom-tags-container');
+
+    addCustomTagBtn.addEventListener('click', function() {
+        const tagValue = customTagInput.value.trim();
+        if (tagValue) {
+            addCustomTag(tagValue);
+            customTagInput.value = '';
+        }
+    });
+
+    customTagInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            addCustomTagBtn.click();
+        }
+    });
+
+    function addCustomTag(tagValue) {
+        // Create hidden input for form submission
+        const hiddenInput = document.createElement('input');
+        hiddenInput.type = 'hidden';
+        hiddenInput.name = 'tags';
+        hiddenInput.value = tagValue;
+
+        // Create visual tag item
+        const tagItem = document.createElement('div');
+        tagItem.className = 'custom-tag-item';
+        tagItem.innerHTML = `
+            ${tagValue}
+            <span class="remove-tag">&times;</span>
+        `;
+
+        // Add remove functionality
+        const removeBtn = tagItem.querySelector('.remove-tag');
+        removeBtn.addEventListener('click', function() {
+            tagItem.remove();
+            hiddenInput.remove();
+        });
+
+        customTagsContainer.appendChild(tagItem);
+        tagItem.appendChild(hiddenInput);
+    }
+});
+</script>
 {% endblock %}
