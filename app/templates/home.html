@@ -83,31 +83,43 @@
   {% if files %}
   <div class="file-list">
     {% for file in files %}
-    <a
-      href="{{ url_for('files.file_detail', doc_id=file.doc_id) }}"
-      class="file-card-link"
-    >
-      <div class="file-card">
-        <div class="file-info">
-          <div class="file-header">
-            <h5 class="file-title">{{ file.title }}</h5>
-            <div class="file-tags">
-              {% if file.tags %} {% for tag in file.tags.split(',') %}
-              <span class="file-tag">{{ tag.strip() }}</span>
-              {% endfor %} {% endif %}
-            </div>
-          </div>
-          <p class="file-description" title="{{ file.description }}">
-            {{ file.description }}
-          </p>
-        </div>
-        <div class="file-action">
-          <span class="file-size-info"
-            >{{ file.file_size | format_filesize }}</span
-          >
+    <div class="file-card">
+      <!-- Image Placeholder - clicking takes to detail page -->
+      <a
+        href="{{ url_for('files.file_detail', doc_id=file.doc_id) }}"
+        class="file-image-container"
+      >
+        <img
+          src="{{ file.thumbnail_url }}"
+          alt="{{ file.title }}"
+          class="file-thumbnail"
+        />
+      </a>
+
+      <div class="file-info">
+        <h5 class="file-title">{{ file.title }}</h5>
+        <div class="file-tags">
+          {% if file.tags %} {% for tag in file.tags.split(',') %}
+          <span class="file-tag">{{ tag.strip() }}</span>
+          {% endfor %} {% endif %}
         </div>
       </div>
-    </a>
+
+      <div class="file-actions">
+        <a
+          href="{{ url_for('files.file_detail', doc_id=file.doc_id) }}"
+          class="file-btn download-btn"
+        >
+          <i class="fas fa-download"></i> Tải xuống
+        </a>
+        <a
+          href="{{ url_for('files.file_detail', doc_id=file.doc_id) }}"
+          class="file-btn review-btn"
+        >
+          <i class="fas fa-star"></i> {{ (file.avg_rating) | int }}/5 sao
+        </a>
+      </div>
+    </div>
     {% endfor %}
   </div>
 
@@ -137,6 +149,11 @@
 </div>
 
 <link rel="stylesheet" href="{{ url_for('static', filename='home.css') }}" />
+<!-- Font Awesome for icons -->
+<link
+  rel="stylesheet"
+  href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
+/>
 
 <script>
   document.addEventListener("DOMContentLoaded", function () {

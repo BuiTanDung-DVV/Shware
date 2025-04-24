@@ -5,6 +5,7 @@ from googleapiclient.discovery import build
 import firebase_admin
 from firebase_admin import credentials, firestore
 from datetime import datetime
+from flask_login import login_required, current_user
 
 files_bp = Blueprint('files', __name__)
 
@@ -99,13 +100,113 @@ def file_detail(doc_id):
                  # Handle cases where the date string might not be in the expected ISO format
                  file_data['upload_date'] = None # Or keep the original string, or log an error
 
-        # Add a placeholder image URL if none exists
-        # You might want to store an actual image URL during upload
-        file_data.setdefault('image_url', url_for('static', filename='default_placeholder.png')) # Replace with your actual placeholder image
+        # Use the thumbnail_url from Firestore if available, otherwise use default placeholder
+        if 'thumbnail_url' not in file_data or not file_data['thumbnail_url']:
+            file_data['thumbnail_url'] = url_for('static', filename='default_placeholder.png')
 
-        return render_template('file_detail.html', file=file_data)
+        # Get user's review if they've reviewed this file
+        user_review = None
+        if current_user.is_authenticated:
+            # Updated query using filter keyword argument
+            user_reviews_query = db.collection('reviews') \
+                .where(filter=firestore.FieldFilter('user_email', '==', current_user.email)) \
+                .where(filter=firestore.FieldFilter('file_id', '==', doc_id)) \
+                .limit(1)
+            user_reviews = user_reviews_query.stream()
+            for review in user_reviews:
+                user_review = review.to_dict()
+                user_review['review_id'] = review.id
+                break
+
+        return render_template('file_detail.html', file=file_data, user_review=user_review)
 
     except Exception as e:
         flash(f'Lỗi khi tải chi tiết tệp: {str(e)}', 'error')
         # Redirect to a safe page, like the file list or home
         return redirect(url_for('files.list_files'))
+
+@files_bp.route('/file/<string:doc_id>/review', methods=['POST'])
+@login_required
+def submit_review(doc_id):
+    """Submit or update a review for a file."""
+    try:
+        rating = request.form.get('rating', type=int)
+        
+        # Validate rating
+        if not rating or rating < 1 or rating > 5:
+            flash('Vui lòng chọn xếp hạng từ 1 đến 5 sao.', 'warning')
+            return redirect(url_for('files.file_detail', doc_id=doc_id))
+        
+        # Check if user has already reviewed this file
+        # Updated query using filter keyword argument
+        user_reviews_query = db.collection('reviews') \
+            .where(filter=firestore.FieldFilter('user_email', '==', current_user.email)) \
+            .where(filter=firestore.FieldFilter('file_id', '==', doc_id)) \
+            .limit(1)
+        user_reviews = user_reviews_query.stream()
+        
+        review_exists = False
+        old_rating = 0
+        
+        for review in user_reviews:
+            review_exists = True
+            review_ref = db.collection('reviews').document(review.id)
+            old_review = review.to_dict()
+            old_rating = old_review.get('rating', 0)
+            
+            # Update the existing review
+            review_ref.update({
+                'rating': rating,
+                'updated_at': datetime.utcnow().isoformat()
+            })
+            break
+        
+        # Get the file document to update average rating
+        file_ref = db.collection('files').document(doc_id)
+        file_doc = file_ref.get()
+        
+        if not file_doc.exists:
+            flash('Không tìm thấy tệp để đánh giá!', 'error')
+            return redirect(url_for('files.list_files'))
+        
+        file_data = file_doc.to_dict()
+        
+        # Update the file's average rating
+        total_reviews = file_data.get('total_reviews', 0)
+        total_rating_sum = file_data.get('total_rating_sum', 0)
+        
+        if not review_exists:
+            # This is a new review
+            total_reviews += 1
+            total_rating_sum += rating
+            
+            # Create a new review document
+            db.collection('reviews').add({
+                'file_id': doc_id,
+                'user_email': current_user.email,
+                'user_name': current_user.name,
+                'rating': rating,
+                'created_at': datetime.utcnow().isoformat(),
+                'updated_at': datetime.utcnow().isoformat()
+            })
+        else:
+            # This is an update to an existing review
+            # Subtract the old rating and add the new one
+            total_rating_sum = total_rating_sum - old_rating + rating
+        
+        # Calculate new average rating
+        avg_rating = total_rating_sum / total_reviews if total_reviews > 0 else 0
+        
+        # Update the file document with new rating data
+        file_ref.update({
+            'avg_rating': avg_rating,
+            'total_reviews': total_reviews,
+            'total_rating_sum': total_rating_sum
+        })
+        
+        flash('Cảm ơn bạn đã đánh giá!', 'success')
+        return redirect(url_for('files.file_detail', doc_id=doc_id))
+        
+    except Exception as e:
+        flash(f'Lỗi khi gửi đánh giá: {str(e)}', 'error')
+        return redirect(url_for('files.file_detail', doc_id=doc_id))

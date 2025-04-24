@@ -83,7 +83,10 @@ def upload_file():
                 'file_size': file_size,
                 'upload_date': datetime.utcnow().isoformat(),
                 'download_url': uploaded_file.get('webViewLink'),
-                'drive_file_id': uploaded_file.get('id')
+                'drive_file_id': uploaded_file.get('id'),
+                'avg_rating': 0, 
+                'total_reviews': 0,  
+                'total_rating_sum': 0  
             })
 
             flash('Tệp đã được tải lên thành công!')

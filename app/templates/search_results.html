@@ -11,32 +11,48 @@ Shware{% endblock %} {% block content %}
   </div>
   {% endif %} {% if results %}
   <div class="file-list mt-4">
-    {# Use file-list class for grid layout #} {% for file in results %}
-    <a
-      href="{{ url_for('files.file_detail', doc_id=file.doc_id) }}"
-      class="file-card-link"
-    >
-      <div class="file-card">
-        <div class="file-info">
-          <div class="file-header">
-            <h5 class="file-title">{{ file.title }}</h5>
-            <div class="file-tags">
-              {% if file.tags %} {% for tag in file.tags.split(',') %}
-              <span class="featured-file-tag">{{ tag.strip() }}</span>
-              {% endfor %} {% endif %}
-            </div>
-          </div>
-          <p class="file-description" title="{{ file.description }}">
-            {{ file.description }}
-          </p>
+    {% for file in results %}
+    <div class="file-card">
+      <!-- Image Placeholder with overlay for rating -->
+      <a
+        href="{{ url_for('files.file_detail', doc_id=file.doc_id) }}"
+        class="file-image-container"
+      >
+        <img
+          src="{{ file.thumbnail_url }}"
+          alt="{{ file.title }}"
+          class="file-thumbnail"
+        />
+        <!-- Rating badge -->
+        <div class="rating-badge">
+          <i class="fas fa-star"></i> {{ (file.avg_rating * 20) | int }}/5 sao
         </div>
-        <div class="file-action">
-          <span class="file-size-info"
-            >{{ file.file_size | format_filesize }}</span
-          >
+      </a>
+
+      <div class="file-info">
+        <h5 class="file-title">{{ file.title }}</h5>
+        <div class="file-tags">
+          {% if file.tags %} {% for tag in file.tags.split(',') %}
+          <span class="file-tag">{{ tag.strip() }}</span>
+          {% endfor %} {% endif %}
         </div>
       </div>
-    </a>
+
+      <div class="file-actions">
+        <a
+          href="{{ url_for('files.file_detail', doc_id=file.doc_id) }}"
+          class="file-btn download-btn"
+        >
+          <i class="fas fa-download"></i> Tải xuống
+        </a>
+        <a
+          href="{{ url_for('files.file_detail', doc_id=file.doc_id) }}"
+          class="file-btn review-btn"
+        >
+          <i class="fas fa-star"></i> Đánh giá
+        </a>
+      </div>
+    </div>
     {% endfor %}
   </div>
   {% else %} {% if query %}
@@ -48,5 +64,10 @@ Shware{% endblock %} {% block content %}
 
 {# Link the home.css for grid styles #}
 <link rel="stylesheet" href="{{ url_for('static', filename='home.css') }}" />
+<!-- Font Awesome for icons -->
+<link
+  rel="stylesheet"
+  href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
+/>
 
 {% endblock %}

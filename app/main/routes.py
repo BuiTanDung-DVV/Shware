@@ -1,4 +1,4 @@
-from flask import render_template, flash, Blueprint, request  # Add request
+from flask import render_template, flash, Blueprint, request, url_for  # Add request
 from flask_login import current_user
 
 import firebase_admin
@@ -64,6 +64,9 @@ def home():
                 'tags': ', '.join(data.get('tags', [])),
                 'download_url': data.get('download_url'),
                 'file_size': data.get('file_size'),
+                'thumbnail_url': data.get('thumbnail_url', url_for('static', filename='default_placeholder.png')),
+                'avg_rating': data.get('avg_rating', 0),
+                'total_reviews': data.get('total_reviews', 0)
             })
         total_files = list(db.collection('files').get())
         total_pages = (len(total_files) + per_page - 1) // per_page
@@ -109,7 +112,10 @@ def search():
                     'file_size': data.get('file_size'),
                     'tags': ', '.join(data.get('tags', [])),
                     'upload_date': data.get('upload_date'),
-                    'download_url': data.get('download_url')
+                    'download_url': data.get('download_url'),
+                    'thumbnail_url': data.get('thumbnail_url', url_for('static', filename='default_placeholder.png')),
+                    'avg_rating': data.get('avg_rating', 0),
+                    'total_reviews': data.get('total_reviews', 0)
                 })
 
         if not results:
