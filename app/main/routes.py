@@ -48,7 +48,7 @@ def home():
 
         # Lấy danh sách tệp đã phân trang (vẫn giữ logic phân trang của bạn)
         page = request.args.get('page', 1, type=int)
-        per_page = 5
+        per_page = 6
         files = []
         paginated_docs = db.collection('files') \
             .order_by('upload_date', direction=firestore.Query.DESCENDING) \
