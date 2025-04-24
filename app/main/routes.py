@@ -23,11 +23,13 @@ def home():
         for doc in latest_files_docs:
             data = doc.to_dict()
             latest_files.append({
+                'doc_id': doc.id,  # <-- Add this line
                 'title': data.get('title'),
                 'description': data.get('description'),
                 'download_url': data.get('download_url'),
                 'upload_date': data.get('upload_date'),
-                'thumbnail_url': data.get('thumbnail_url', 'https://via.placeholder.com/300') # Thêm thumbnail nếu có
+                'thumbnail_url': data.get('thumbnail_url', 'https://via.placeholder.com/300'),
+                'file_size': data.get('file_size') 
             })
 
         # Lấy tất cả các tệp để phân loại
@@ -60,7 +62,8 @@ def home():
                 'title': data.get('title'),
                 'description': data.get('description'),
                 'tags': ', '.join(data.get('tags', [])),
-                'download_url': data.get('download_url')
+                'download_url': data.get('download_url'),
+                'file_size': data.get('file_size'),
             })
         total_files = list(db.collection('files').get())
         total_pages = (len(total_files) + per_page - 1) // per_page
