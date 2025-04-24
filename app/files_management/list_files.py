@@ -1,9 +1,10 @@
 import os
-from flask import Blueprint, render_template, flash, redirect, url_for, request
+from flask import Blueprint, render_template, flash, redirect, url_for, request, abort
 from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
 import firebase_admin
 from firebase_admin import credentials, firestore
+from datetime import datetime
 
 files_bp = Blueprint('files', __name__)
 
@@ -76,3 +77,35 @@ def delete_file(doc_id):
         flash(f'Không thể xóa tệp: {str(e)}')
 
     return redirect(url_for('files.list_files'))
+
+@files_bp.route('/file/<string:doc_id>')
+def file_detail(doc_id):
+    """Displays the detail page for a specific file."""
+    try:
+        file_ref = db.collection('files').document(doc_id)
+        file_doc = file_ref.get()
+
+        if not file_doc.exists:
+            abort(404) # Not found
+
+        file_data = file_doc.to_dict()
+        file_data['doc_id'] = doc_id # Add doc_id for potential use in template
+
+        # Assuming upload_date is stored as ISO string, convert to datetime object if needed for display formatting
+        if 'upload_date' in file_data and isinstance(file_data['upload_date'], str):
+             try:
+                 file_data['upload_date'] = datetime.fromisoformat(file_data['upload_date'])
+             except ValueError:
+                 # Handle cases where the date string might not be in the expected ISO format
+                 file_data['upload_date'] = None # Or keep the original string, or log an error
+
+        # Add a placeholder image URL if none exists
+        # You might want to store an actual image URL during upload
+        file_data.setdefault('image_url', url_for('static', filename='default_placeholder.png')) # Replace with your actual placeholder image
+
+        return render_template('file_detail.html', file=file_data)
+
+    except Exception as e:
+        flash(f'Lỗi khi tải chi tiết tệp: {str(e)}', 'error')
+        # Redirect to a safe page, like the file list or home
+        return redirect(url_for('files.list_files'))

@@ -1,6 +1,4 @@
-{% extends 'base.html' %}
-
-{% block content %}
+{% extends 'base.html' %} {% block content %}
 <div class="container mt-5">
     <h2 class="mb-4 text-center display-5">📂 Kho Tài Liệu Chia Sẻ</h2>
 
@@ -19,7 +17,11 @@
                 <div class="slide {% if loop.index == 1 %}active{% endif %}">
                     <div class="featured-file-card">
                         <div class="featured-file-content">
-                            <h3 class="featured-file-title">{{ featured_file.title }}</h3>
+                            <h3 class="featured-file-title">
+                              <a href="{{ url_for('files.file_detail', doc_id=file.doc_id) }}">
+                              {{ featured_file.title }}
+                              </a>
+                          </h3>
                             <p class="featured-file-description">{{ featured_file.description }}</p>
                             <div class="featured-file-tags">
                                 {% if featured_file.tags %}
@@ -73,7 +75,10 @@
         <div class="file-card">
             <div class="file-info">
                 <div class="file-header">
-                    <h5 class="file-title">{{ file.title }}</h5>
+                    <h5 class="file-title">
+                       <a href="{{ url_for('files.file_detail', doc_id=file.doc_id) }}"
+                        >{{ file.title }}</a>
+                    </h5>
                     <div class="file-tags">
                         {% if file.tags %}
                             {% for tag in file.tags.split(',') %}
@@ -91,10 +96,12 @@
                     <a href="{{ url_for('auth.login') }}" class="login-btn">🔒 Đăng nhập</a>
                 {% endif %}
             </div>
-        </div>
-        {% endfor %}
-    </div>
 
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
     <div class="pagination text-center mt-4 fs-5">
         {% if page > 1 %}
         <a href="{{ url_for('main.home', page=page - 1, tag=selected_tag) }}" class="page-link">⬅️ Trang trước</a>
@@ -106,7 +113,12 @@
     </div>
     {% else %}
     <div class="alert alert-info text-center fs-5">Không có tệp nào được tải lên{% if selected_tag %} với tag "{{ selected_tag }}"{% endif %}.</div>
+
     {% endif %}
+  </div>
+  {% else %}
+  <div class="alert alert-info text-center">Không có tệp nào được tải lên.</div>
+  {% endif %}
 </div>
 
 <link rel="stylesheet" href="{{ url_for('static', filename='home.css') }}">
@@ -194,3 +206,4 @@
     });
 </script>
 {% endblock %}
+

@@ -5,6 +5,7 @@ from flask import Flask
 from app.config import Config
 from dotenv import load_dotenv
 from flask_login import LoginManager
+from app.files_management.upload import format_filesize
 from app.models import db
 import pyrebase
 
@@ -18,7 +19,8 @@ def create_app(config_class=Config):
     app = Flask(__name__)
     app.config.from_object(config_class)
     
-    # print("test")
+    app.jinja_env.filters['format_filesize'] = format_filesize
+    
     # Initialize SQLAlchemy
     db.init_app(app)
     

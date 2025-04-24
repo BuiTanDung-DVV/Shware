@@ -1,20 +1,7 @@
-{% extends 'base.html' %}
-
-{% block content %}
+{% extends 'base.html' %} {% block content %}
 <main>
-    <div class="file-table">
-        <h2>📁 Danh sách File</h2>
-
-        <!-- Flash messages -->
-        {% with messages = get_flashed_messages(with_categories=true) %}
-          {% if messages %}
-            <div class="flashes">
-              {% for category, message in messages %}
-                <div class="flash {{ category }}">{{ message }}</div>
-              {% endfor %}
-            </div>
-          {% endif %}
-        {% endwith %}
+  <div class="file-table">
+    <h2>📁 Danh sách File</h2>
 
         {% if files %}
         <div class="table-container">
@@ -34,7 +21,7 @@
                 <tbody>
                     {% for file in files %}
                     <tr>
-                        <td><a href="{{ file.download_url }}" target="_blank">{{ file.title }}</a></td>
+                        <td><a href="{{ url_for('files.file_detail', doc_id=file.doc_id) }}">{{ file.title }}</a></td>
                         <td>{{ file.author }}</td>
                         <td>{{ file.description }}</td>
                         <td>{{ file.file_type }}</td>
@@ -50,25 +37,32 @@
             </table>
         </div>
 
-        <!-- Pagination Controls -->
-        <div class="pagination">
-            {% if page > 1 %}
-            <a href="{{ url_for('files.list_files', page=page - 1) }}">⬅️ Trang trước</a>
-            {% endif %}
 
-            <span>Trang {{ page }} trên {{ total_pages }}</span>
+    <!-- Pagination Controls -->
+    <div class="pagination">
+      {% if page > 1 %}
+      <a href="{{ url_for('files.list_files', page=page - 1) }}"
+        >⬅️ Trang trước</a
+      >
+      {% endif %}
 
-            {% if page < total_pages %}
-            <a href="{{ url_for('files.list_files', page=page + 1) }}">Trang tiếp ➡️</a>
-            {% endif %}
-        </div>
-        {% else %}
-        <div class="flash warning">📂 Chưa có tệp nào được tải lên.</div>
-        {% endif %}
+      <span>Trang {{ page }} trên {{ total_pages }}</span>
 
-        <div class="auth-links">
-            <a href="{{ url_for('upload.upload_file') }}">⬅️ Quay lại Trang Tải lên</a>
-        </div>
+      {% if page < total_pages %}
+      <a href="{{ url_for('files.list_files', page=page + 1) }}"
+        >Trang tiếp ➡️</a
+      >
+      {% endif %}
     </div>
+    {% else %}
+    <div class="flash warning">📂 Chưa có tệp nào được tải lên.</div>
+    {% endif %}
+
+    <div class="auth-links">
+      <a href="{{ url_for('upload.upload_file') }}"
+        >⬅️ Quay lại Trang Tải lên</a
+      >
+    </div>
+  </div>
 </main>
 {% endblock %}
