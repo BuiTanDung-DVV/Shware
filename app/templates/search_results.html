@@ -15,7 +15,11 @@ Shware{% endblock %} {% block content %}
     <div class="col-md-6 col-lg-4">
       <div class="card mb-4 shadow-sm h-100">
         <div class="card-body d-flex flex-column">
-          <h5 class="card-title">{{ file.title }}</h5>
+          <h5 class="card-title">
+            <a href="{{ url_for('files.file_detail', doc_id=file.doc_id) }}"
+              >{{ file.title }}</a
+            >
+          </h5>
           <p class="card-text text-truncate" title="{{ file.description }}">
             {{ file.description }}
           </p>

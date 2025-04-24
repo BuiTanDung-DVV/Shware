@@ -2,11 +2,11 @@ from flask import render_template, session, redirect, url_for, flash, Blueprint,
 from firebase_admin import firestore, auth as firebase_auth
 from flask_login import login_required, current_user
 from ..auth.forms import ProfileUpdateForm
-from .. import db # Import the SQLAlchemy db instance from the app package
+from .. import db 
 from ..models.user import User
 
 user_profile_bp = Blueprint('user_profile', __name__)
-db_firestore = firestore.client() # Rename Firestore client to avoid name clash
+db_firestore = firestore.client()
 
 @user_profile_bp.route('/profile', methods=['GET', 'POST'])
 @login_required
@@ -35,7 +35,7 @@ def profile():
     if form.validate_on_submit():
         print('Form submitted and validated.')
         flash('Display name updated successfully01.', 'success00')
-        # --- Update Display Name Logic --- 
+
         display_name = form.display_name.data
         if display_name and display_name != (firebase_user.display_name or ''):
             try:
@@ -76,7 +76,6 @@ def profile():
             except Exception as e:
                  flash(f'An unexpected error occurred while updating password: {e}', 'danger')
         elif not has_password_provider and new_password:
-            # Optional: Inform OAuth users they can't set a password this way
             flash('Password cannot be changed for accounts logged in via Google or other providers.', 'info')
 
 

@@ -25,6 +25,7 @@ def home():
         for doc in docs:
             data = doc.to_dict()
             files.append({
+                'doc_id': doc.id,
                 'title': data.get('title'),
                 'author': data.get('author'),
                 'email': data.get('email'),
@@ -66,7 +67,7 @@ def search():
 
             if title_match or desc_match or tags_match:
                 results.append({
-                    'id': doc.id,
+                    'doc_id': doc.id,
                     'title': data.get('title'),
                     'author': data.get('author'),
                     'email': data.get('email'),
