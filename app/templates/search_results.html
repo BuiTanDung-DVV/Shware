@@ -21,10 +21,9 @@ Shware{% endblock %} {% block content %}
           <div class="file-header">
             <h5 class="file-title">{{ file.title }}</h5>
             <div class="file-tags">
-              {% if file.tags %} {# Assuming file.tags is already a list from
-              Firestore #} {% for tag in file.tags %} {% if tag.strip() %}
-              <span class="file-tag">{{ tag.strip() }}</span>
-              {% endif %} {% endfor %} {% endif %}
+              {% if file.tags %} {% for tag in file.tags.split(',') %}
+              <span class="featured-file-tag">{{ tag.strip() }}</span>
+              {% endfor %} {% endif %}
             </div>
           </div>
           <p class="file-description" title="{{ file.description }}">
@@ -45,12 +44,6 @@ Shware{% endblock %} {% block content %}
     Không tìm thấy tệp nào phù hợp với tìm kiếm của bạn.
   </div>
   {% endif %} {% endif %}
-
-  <div class="text-center mt-5">
-    <a href="{{ url_for('main.home') }}" class="btn btn-secondary"
-      >⬅️ Quay lại Trang chủ</a
-    >
-  </div>
 </div>
 
 {# Link the home.css for grid styles #}
