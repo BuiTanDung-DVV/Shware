@@ -43,19 +43,6 @@ def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
-def format_filesize(size_bytes):
-    """Converts a size in bytes to a human-readable string in KB, MB, or GB."""
-    if size_bytes is None or not isinstance(size_bytes, (int, float)) or size_bytes < 0:
-        return "N/A"
-    if size_bytes == 0:
-        return "0 B"
-    size_name = ("B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB")
-    i = int(math.floor(math.log(size_bytes, 1024)))
-    p = math.pow(1024, i)
-    s = round(size_bytes / p, 2)
-    return f"{s} {size_name[i]}"
-
-
 def upload_thumbnail_to_cloudinary(file, title):
     """Upload thumbnail to Cloudinary and return the URL"""
     try:
@@ -127,24 +114,25 @@ def upload_file():
             # 3. Lưu thông tin vào Firestore - luôn sử dụng tên người dùng hiện tại
             db.collection('files').add({
                 'title': title,
-                'author': current_user.name,  # Luôn sử dụng tên người dùng hiện tại
+                'author': current_user.name,  
+                'author_id': current_user.id, 
                 'email': current_user.email,
                 'profile_pic': current_user.profile_pic,
                 'description': description,
-                'tags': tags,  # Danh sách các tag đã được chọn
+                'tags': tags, 
                 'file_type': filename.rsplit('.', 1)[1].lower(),
                 'file_size': file_size,
                 'upload_date': datetime.utcnow().isoformat(),
                 'download_url': uploaded_file.get('webViewLink'),
                 'drive_file_id': uploaded_file.get('id'),
-                'thumbnail_url': thumbnail_url,  # Thêm URL thumbnail,
+                'thumbnail_url': thumbnail_url,  
                 'avg_rating': 0, 
                 'total_reviews': 0,  
                 'total_rating_sum': 0  
             })
 
             flash('Tệp đã được tải lên thành công!', 'success')
-            return redirect(url_for('files.list_files'))
+            return redirect(url_for('user_profile.profile', _anchor='uploads'))
 
         except Exception as e:
             flash(f'Đã xảy ra lỗi: {str(e)}', 'error')

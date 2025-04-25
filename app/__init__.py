@@ -5,7 +5,8 @@ from flask import Flask
 from app.config import Config
 from dotenv import load_dotenv
 from flask_login import LoginManager
-from app.files_management.upload import format_filesize
+from app.utils.date_formater import format_datetime_filter
+from app.utils.filesize_formater import format_filesize
 from app.models import db
 import pyrebase
 
@@ -20,7 +21,7 @@ def create_app(config_class=Config):
     app.config.from_object(config_class)
     
     app.jinja_env.filters['format_filesize'] = format_filesize
-    
+    app.jinja_env.filters['format_datetime'] = format_datetime_filter
     # Initialize SQLAlchemy
     db.init_app(app)
     

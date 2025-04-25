@@ -96,5 +96,16 @@ def profile():
         'registration_date': registration_date
     }
 
-    # Pass the has_password_provider flag to the template
-    return render_template('profile.html', user_info=user_info, form=form, has_password_provider=has_password_provider)
+    # Fetch user uploads from Firestore
+    user_uploads = []
+    try:
+        uploads_query = db_firestore.collection('files').where('author_id', '==', user_id).stream()
+        for doc in uploads_query:
+            file_data = doc.to_dict()
+            file_data['doc_id'] = doc.id
+            user_uploads.append(file_data)
+    except Exception as e:
+        flash(f"Error fetching user uploads: {e}", "danger")
+
+    # Pass the user uploads to the template
+    return render_template('profile.html', user_info=user_info, form=form, has_password_provider=has_password_provider, user_uploads=user_uploads)

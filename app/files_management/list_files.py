@@ -63,7 +63,7 @@ def delete_file(doc_id):
         doc = doc_ref.get()
         if not doc.exists:
             flash('Không tìm thấy tệp để xóa!')
-            return redirect(url_for('files.list_files'))
+            return redirect(url_for('user_profile.profile', _anchor='uploads'))
 
         drive_file_id = doc.to_dict().get('drive_file_id')
         if drive_file_id:
@@ -73,11 +73,12 @@ def delete_file(doc_id):
                 flash(f'Không thể xóa file trên Google Drive: {str(e)}')
 
         doc_ref.delete()
-        flash('Tệp đã được xóa thành công!')
+        flash('Tệp đã được xóa thành công!', 'success')
     except Exception as e:
-        flash(f'Không thể xóa tệp: {str(e)}')
+        flash(f'Không thể xóa tệp: {str(e)}', 'error')
 
-    return redirect(url_for('files.list_files'))
+    # Redirect back to the profile page, specifically targeting the uploads tab
+    return redirect(url_for('user_profile.profile', _anchor='uploads'))
 
 @files_bp.route('/file/<string:doc_id>')
 def file_detail(doc_id):
@@ -123,7 +124,7 @@ def file_detail(doc_id):
     except Exception as e:
         flash(f'Lỗi khi tải chi tiết tệp: {str(e)}', 'error')
         # Redirect to a safe page, like the file list or home
-        return redirect(url_for('files.list_files'))
+        return redirect(url_for('user_profile.profile', _anchor='uploads'))
 
 @files_bp.route('/file/<string:doc_id>/review', methods=['POST'])
 @login_required
@@ -167,7 +168,7 @@ def submit_review(doc_id):
         
         if not file_doc.exists:
             flash('Không tìm thấy tệp để đánh giá!', 'error')
-            return redirect(url_for('files.list_files'))
+            redirect(url_for('main.home'))
         
         file_data = file_doc.to_dict()
         
