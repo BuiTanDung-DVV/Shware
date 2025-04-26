@@ -21,13 +21,48 @@ if not firebase_admin._apps:
     firebase_admin.initialize_app(cred)
 db = firestore.client()
 
+
 @files_bp.route('/files')
 def list_files():
     try:
         page = request.args.get('page', 1, type=int)
         per_page = 5
+
+        # Thêm tham số sort_by và sort_direction
+        sort_by = request.args.get('sort_by', 'upload_date')
+        sort_direction = request.args.get('sort_direction', 'desc')
+
+        # Danh sách các trường hợp lệ để tránh lỗi bảo mật
+        valid_sort_fields = ['title', 'author', 'file_type', 'file_size', 'upload_date']
+        if sort_by not in valid_sort_fields:
+            sort_by = 'upload_date'  # Mặc định
+
+        valid_directions = ['asc', 'desc']
+        if sort_direction not in valid_directions:
+            sort_direction = 'desc'  # Mặc định
+
+        # Xây dựng truy vấn với sắp xếp
+        query = db.collection('files')
+
+        # Thêm lọc tags nếu được chỉ định
+        tag_filter = request.args.get('tag')
+        if tag_filter:
+            query = query.where(filter=firestore.FieldFilter('tags', 'array_contains', tag_filter))
+
+        # Thêm lọc file_type nếu được chỉ định
+        file_type_filter = request.args.get('file_type')
+        if file_type_filter:
+            query = query.where(filter=firestore.FieldFilter('file_type', '==', file_type_filter))
+
+        # Thêm sắp xếp
+        direction = firestore.Query.DESCENDING if sort_direction == 'desc' else firestore.Query.ASCENDING
+        query = query.order_by(sort_by, direction=direction)
+
+        # Thực hiện phân trang
+        query = query.offset((page - 1) * per_page).limit(per_page)
+
         files = []
-        docs = db.collection('files').offset((page - 1) * per_page).limit(per_page).stream()
+        docs = query.stream()
         for doc in docs:
             data = doc.to_dict()
             files.append({
@@ -39,23 +74,57 @@ def list_files():
                 'description': data.get('description'),
                 'file_type': data.get('file_type'),
                 'file_size': data.get('file_size'),
-                'tags': ', '.join(data.get('tags', [])),
+                'tags': data.get('tags', []),  # Giữ nguyên danh sách để dễ truy cập
+                'tags_str': ', '.join(data.get('tags', [])),
                 'upload_date': data.get('upload_date'),
                 'download_url': data.get('download_url'),
                 'drive_file_id': data.get('drive_file_id')
             })
 
         # Get total file count for pagination
-        total_files = db.collection('files').get()
-        total_pages = (len(total_files) + per_page - 1) // per_page
+        # Áp dụng các bộ lọc tương tự cho việc đếm tổng số tệp
+        count_query = db.collection('files')
+        if tag_filter:
+            count_query = count_query.where(filter=firestore.FieldFilter('tags', 'array_contains', tag_filter))
+        if file_type_filter:
+            count_query = count_query.where(filter=firestore.FieldFilter('file_type', '==', file_type_filter))
+
+        total_files = len(list(count_query.stream()))
+        total_pages = (total_files + per_page - 1) // per_page
+
+        # Lấy tất cả loại file để hiển thị bộ lọc
+        all_file_types = set()
+        all_tags = set()
+
+        # Lấy một số lượng giới hạn để tránh quá tải
+        type_docs = db.collection('files').limit(100).stream()
+        for doc in type_docs:
+            data = doc.to_dict()
+            all_file_types.add(data.get('file_type'))
+            for tag in data.get('tags', []):
+                all_tags.add(tag)
 
     except Exception as e:
         flash(f'Không thể tải danh sách tệp: {str(e)}')
         files = []
         total_pages = 1
+        all_file_types = set()
+        all_tags = set()
+        sort_by = 'upload_date'
+        sort_direction = 'desc'
+        tag_filter = None
+        file_type_filter = None
 
-    return render_template('files.html', files=files, page=page, total_pages=total_pages)
-
+    return render_template('files.html',
+                           files=files,
+                           page=page,
+                           total_pages=total_pages,
+                           sort_by=sort_by,
+                           sort_direction=sort_direction,
+                           all_file_types=sorted(all_file_types),
+                           all_tags=sorted(all_tags),
+                           current_tag=tag_filter,
+                           current_file_type=file_type_filter)
 @files_bp.route('/delete/<doc_id>', methods=['POST'])
 def delete_file(doc_id):
     try:
