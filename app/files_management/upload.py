@@ -1,12 +1,15 @@
 import os
 import io
 import math
-from flask import Blueprint, request, redirect, render_template, flash, url_for
+import threading
+import time
+import uuid
+from flask import Blueprint, request, redirect, render_template, flash, url_for, jsonify, session
 from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
 from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
-from googleapiclient.http import MediaIoBaseUpload
+from googleapiclient.http import MediaIoBaseUpload, MediaIoBaseDownload
 import firebase_admin
 from firebase_admin import credentials, firestore
 from datetime import datetime
@@ -38,6 +41,8 @@ cloudinary.config(
     secure=True
 )
 
+# Dictionary to track upload progress
+upload_progress = {}
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -61,6 +66,62 @@ def upload_thumbnail_to_cloudinary(file, title):
         print(f"Cloudinary upload error: {e}")
         return None
 
+
+def background_upload_task(upload_id, file_content, filename, title, description, tags, thumbnail_url, current_user_id, current_user_name, current_user_email, current_user_profile_pic, doc_id):
+    """Hàm xử lý quá trình tải lên nền với theo dõi tiến độ thực tế"""
+    try:
+        upload_progress[upload_id]['status'] = 'uploading'
+        upload_progress[upload_id]['progress'] = 0
+
+        file_size = len(file_content)
+        # Chuẩn bị tải lên Google Drive
+        file_metadata = {
+            'name': filename,
+            'parents': [FOLDER_ID]
+        }
+        media = MediaIoBaseUpload(io.BytesIO(file_content), mimetype='application/octet-stream', resumable=True)
+        request_drive = service.files().create(
+            body=file_metadata,
+            media_body=media,
+            fields='id, webViewLink'
+        )
+        response = None
+        while response is None:
+            status, response = request_drive.next_chunk()
+            if status:
+                uploaded = int(status.resumable_progress)
+                percent = int((uploaded / file_size) * 85) if file_size else 85
+                print(f"Uploaded {uploaded} of {file_size} bytes ({percent}%)")
+                upload_progress[upload_id]['progress'] = min(percent, 85)  # Tối đa 85% khi tải lên
+        # Sau khi tải lên xong, đặt tiến độ là 90%
+        upload_progress[upload_id]['progress'] = 90
+
+        # Cập nhật tài liệu hiện có trong Firestore
+        current_time = datetime.utcnow()
+        db.collection('files').document(doc_id).update({
+            'description': description,
+            'tags': tags,
+            'upload_date': current_time.isoformat(),
+            'download_url': response.get('webViewLink'),
+            'drive_file_id': response.get('id'),
+            'avg_rating': 0,
+            'total_reviews': 0,
+            'total_rating_sum': 0,
+            'upload_status': 'completed'
+        })
+        upload_progress[upload_id]['progress'] = 100
+        upload_progress[upload_id]['status'] = 'completed'
+        
+        # Xóa mục tiến độ sau khi hoàn tất
+        if upload_id in upload_progress:
+            del upload_progress[upload_id]
+    except Exception as e:
+        print(f"Lỗi tải lên nền: {e}")
+        upload_progress[upload_id]['status'] = 'failed'
+        upload_progress[upload_id]['error'] = str(e)
+        time.sleep(3600)  # Keep error info available for 1 hour
+        if upload_id in upload_progress:
+            del upload_progress[upload_id]
 
 @upload_bp.route('/upload_files', methods=['GET', 'POST'])
 @login_required
@@ -94,44 +155,55 @@ def upload_file():
                 # Sử dụng thumbnail mặc định
                 thumbnail_url = '/static/images/default-thumbnail.png'
 
-            # 2. Upload file chính lên Google Drive
-            filename = secure_filename(file.filename)
+            # Generate a unique ID for this upload
+            upload_id = str(uuid.uuid4())
+            
+            # Read the file content
             file_content = file.read()
-            file_size = len(file_content)
-            file.seek(0)
-
-            file_metadata = {
-                'name': filename,
-                'parents': [FOLDER_ID]
-            }
-            media = MediaIoBaseUpload(io.BytesIO(file_content), mimetype='application/octet-stream')
-            uploaded_file = service.files().create(
-                body=file_metadata,
-                media_body=media,
-                fields='id, webViewLink'
-            ).execute()
-
-            # 3. Lưu thông tin vào Firestore - luôn sử dụng tên người dùng hiện tại
-            db.collection('files').add({
+            filename = secure_filename(file.filename)
+            
+            # Create a temporary entry in Firestore for this upload
+            _, doc_ref = db.collection('files').add({
                 'title': title,
-                'author': current_user.name,  
-                'author_id': current_user.id, 
-                'email': current_user.email,
-                'profile_pic': current_user.profile_pic,
-                'description': description,
-                'tags': tags, 
+                'author': current_user.name,
+                'author_id': current_user.id,
                 'file_type': filename.rsplit('.', 1)[1].lower(),
-                'file_size': file_size,
-                'upload_date': datetime.utcnow().isoformat(),
-                'download_url': uploaded_file.get('webViewLink'),
-                'drive_file_id': uploaded_file.get('id'),
-                'thumbnail_url': thumbnail_url,  
-                'avg_rating': 0, 
-                'total_reviews': 0,  
-                'total_rating_sum': 0  
+                'file_size': len(file_content),
+                'thumbnail_url': thumbnail_url,
+                'upload_id': upload_id,
+                'upload_status': 'pending',
+                'upload_date': datetime.utcnow().isoformat()
             })
+            
+            if not isinstance(doc_ref, firestore.DocumentReference):
+                raise ValueError(f"doc_ref không phải là DocumentReference, mà là {type(doc_ref)}")
+            doc_id = doc_ref.id
+            
+            # Initialize progress tracking
+            upload_progress[upload_id] = {
+                'status': 'starting', 
+                'progress': 0, 
+                'filename': filename,
+                'title': title
+            }
+            
+            # Store upload ID in session
+            if 'uploads' not in session:
+                session['uploads'] = []
+            session['uploads'].append(upload_id)
+            session.modified = True
+            
+            # Start background thread for uploading
+            upload_thread = threading.Thread(
+                target=background_upload_task,
+                args=(upload_id, file_content, filename, title, description, tags, 
+                      thumbnail_url, current_user.id, current_user.name, 
+                      current_user.email, current_user.profile_pic, doc_id)
+            )
+            upload_thread.daemon = True
+            upload_thread.start()
 
-            flash('Tệp đã được tải lên thành công!', 'success')
+            flash('Tải lên đã bắt đầu và sẽ tiếp tục trong nền!', 'success')
             return redirect(url_for('user_profile.profile', _anchor='uploads'))
 
         except Exception as e:
@@ -139,3 +211,41 @@ def upload_file():
             return redirect(request.url)
 
     return render_template('upload.html')
+
+
+@upload_bp.route('/upload_progress/<upload_id>', methods=['GET'])
+@login_required
+def get_upload_progress(upload_id):
+    """API endpoint để lấy tiến độ tải lên"""
+    # Check in-memory progress first
+    if upload_id in upload_progress:
+        return jsonify(upload_progress[upload_id])
+    
+    # If not in memory and marked as completed in session, return completed status
+    if 'completed_uploads' in session and upload_id in session['completed_uploads']:
+        return jsonify({
+            'status': 'completed',
+            'progress': 100
+        })
+            
+    # Only check Firestore if we don't know the status
+    try:
+        uploads = db.collection('files').where('upload_id', '==', upload_id).limit(1).stream()
+        for doc in uploads:
+            data = doc.to_dict()
+            if data.get('upload_status') == 'completed':
+                # Store in session to avoid future Firestore queries
+                if 'completed_uploads' not in session:
+                    session['completed_uploads'] = []
+                if upload_id not in session['completed_uploads']:
+                    session['completed_uploads'].append(upload_id)
+                    session.modified = True
+                
+                return jsonify({
+                    'status': 'completed',
+                    'progress': 100
+                })
+    except Exception as e:
+        print(f"Error checking Firestore for upload status: {e}")
+        
+    return jsonify({'status': 'unknown', 'progress': 0}), 404

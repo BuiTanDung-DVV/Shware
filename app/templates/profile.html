@@ -33,6 +33,7 @@ block title %}User Profile{% endblock %} {% block content %}
     </li>
   </ul>
   <div class="tab-content" id="profileTabsContent">
+    <!-- Tab User Profile -->
     <div
       class="tab-pane fade show active"
       id="profile"
@@ -94,6 +95,8 @@ block title %}User Profile{% endblock %} {% block content %}
         </div>
       </div>
     </div>
+
+    <!-- Tab Uploads -->
     <div
       class="tab-pane fade"
       id="uploads"
@@ -103,51 +106,218 @@ block title %}User Profile{% endblock %} {% block content %}
       <!-- Nội dung của tab Uploads -->
       <h3>Your Uploads</h3>
       {% if user_uploads %}
-      <ul class="uploads-list-detailed">
+      <div class="uploads-column-layout">
         {% for file in user_uploads %}
-        <li class="upload-item">
-          <a
-            href="{{ url_for('files.file_detail', doc_id=file.doc_id) }}"
-            class="upload-item-title"
-            >{{ file.title }}</a
-          >
-          <span class="upload-item-date"
-            >{{ file.upload_date | format_datetime }}</span
-          >
-          {# Assuming you have a format_datetime filter #}
-          <div class="upload-item-actions">
-            <a
-              href="#"
-              class="btn btn-sm btn-outline-secondary action-btn"
-              title="Edit"
-            >
-              {# Placeholder link for Edit #}
-              <i class="fas fa-edit"></i>
-            </a>
-            <form
-              method="POST"
-              action="{{ url_for('files.delete_file', doc_id=file.doc_id) }}"
-              style="display: inline"
-              onsubmit="return confirm('Are you sure you want to delete this file?');"
-            >
-              <button
-                type="submit"
-                class="btn btn-sm btn-outline-danger action-btn"
-                title="Delete"
-              >
-                <i class="fas fa-trash"></i>
-              </button>
-            </form>
+        <div class="file-card" id="file-{{ file.doc_id }}">
+          <div class="file-card-thumbnail">
+            <img
+              src="{{ file.thumbnail_url or '/static/images/default-thumbnail.png' }}"
+              alt="File Thumbnail"
+            />
           </div>
-        </li>
+          <div class="file-card-content">
+            <a
+              href="{{ url_for('files.file_detail', doc_id=file.doc_id) }}"
+              class="file-card-title"
+            >
+              {{ file.title }}
+            </a>
+            <div class="file-card-meta">
+              <span class="file-card-date"
+                >{{ file.upload_date | format_datetime }}</span
+              >
+              <span class="file-card-type">{{ file.file_type }}</span>
+            </div>
+
+            <!-- Thanh tiến trình nếu đang tải lên -->
+            {% if file.upload_status == 'pending' or file.upload_status ==
+            'uploading' %}
+            <div class="upload-progress-wrapper">
+              <div class="upload-progress-container">
+                <div
+                  class="upload-progress-bar"
+                  data-upload-id="{{ file.upload_id }}"
+                  style="width: 0%"
+                ></div>
+              </div>
+              <div
+                class="upload-progress-text"
+                data-upload-id="{{ file.upload_id }}"
+              >
+                0%
+              </div>
+            </div>
+            {% endif %}
+
+            <div class="file-card-actions">
+              <a
+                href="#"
+                class="btn btn-sm btn-outline-secondary action-btn"
+                title="Edit"
+              >
+                <i class="fas fa-edit"></i>
+              </a>
+              <form
+                method="POST"
+                action="{{ url_for('files.delete_file', doc_id=file.doc_id) }}"
+                style="display: inline"
+                onsubmit="return confirm('Are you sure you want to delete this file?');"
+              >
+                <button
+                  type="submit"
+                  class="btn btn-sm btn-outline-danger action-btn"
+                  title="Delete"
+                >
+                  <i class="fas fa-trash"></i>
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
         {% endfor %}
-      </ul>
+      </div>
       {% else %}
       <p>You have not uploaded any files yet.</p>
       {% endif %}
     </div>
   </div>
 </div>
+
+<style>
+  /* Giao diện dạng cột cho danh sách file */
+  .uploads-column-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  /* Card cho từng file */
+  .file-card {
+    display: flex;
+    background-color: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    overflow: hidden;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+
+  .file-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  /* Thumbnail của file */
+  .file-card-thumbnail {
+    flex: 0 0 120px;
+    background-color: var(--light-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-right: 1px solid var(--border-color);
+  }
+
+  .file-card-thumbnail img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: cover;
+  }
+
+  /* Phần nội dung của card */
+  .file-card-content {
+    flex: 1;
+    padding: 12px 16px;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+
+  /* Tiêu đề file */
+  .file-card-title {
+    max-width: 700px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-weight: 500;
+    font-size: 1.1em;
+    margin-bottom: 8px;
+    color: var(--primary-color);
+    text-decoration: none;
+  }
+
+  .file-card-title:hover {
+    text-decoration: underline;
+  }
+
+  /* Thông tin meta của file */
+  .file-card-meta {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 10px;
+    font-size: 0.85em;
+    color: var(--text-color);
+    opacity: 0.7;
+  }
+
+  /* Loại file */
+  .file-card-type {
+    text-transform: uppercase;
+    font-weight: 500;
+    color: var(--secondary-color);
+  }
+
+  /* Phần actions */
+  .file-card-actions {
+    margin-top: 10px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+
+  /* Progress bar styling */
+  .upload-progress-wrapper {
+    width: 100%;
+    margin: 8px 0;
+    position: relative;
+  }
+
+  .upload-progress-container {
+    width: 100%;
+    height: 6px;
+    background-color: var(--light-color);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  .upload-progress-bar {
+    height: 100%;
+    background-color: var(--secondary-color);
+    transition: width 0.5s ease;
+    border-radius: 3px;
+  }
+
+  .upload-progress-text {
+    position: absolute;
+    right: 0;
+    bottom: -16px;
+    font-size: 12px;
+    color: var(--text-color);
+    opacity: 0.8;
+  }
+
+  /* Responsive styling */
+  @media (max-width: 576px) {
+    .file-card {
+      flex-direction: column;
+    }
+
+    .file-card-thumbnail {
+      height: 140px;
+      flex: none;
+      border-right: none;
+      border-bottom: 1px solid var(--border-color);
+    }
+  }
+</style>
 
 <script>
   document.addEventListener("DOMContentLoaded", function () {
@@ -191,7 +361,67 @@ block title %}User Profile{% endblock %} {% block content %}
         }
       });
     });
+
+    // Tìm và cập nhật thanh tiến trình cho các file đang tải
+    updateAllProgressBars();
   });
+
+  // Hàm cập nhật tất cả thanh tiến trình
+  function updateAllProgressBars() {
+    const progressBars = document.querySelectorAll(".upload-progress-bar");
+    if (progressBars.length === 0) return;
+
+    progressBars.forEach((progressBar) => {
+      const uploadId = progressBar.getAttribute("data-upload-id");
+      if (!uploadId) return;
+
+      updateProgressBar(uploadId);
+    });
+
+    // Kiểm tra cập nhật mỗi 2 giây
+    setTimeout(updateAllProgressBars, 2000); // Tăng thời gian kiểm tra để giảm tải server
+  }
+
+  // Hàm cập nhật một thanh tiến trình cụ thể
+  function updateProgressBar(uploadId) {
+    fetch(`/upload_progress/${uploadId}`)
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Failed to fetch progress");
+        }
+        return response.json();
+      })
+      .then((data) => {
+        const progressBar = document.querySelector(
+          `.upload-progress-bar[data-upload-id="${uploadId}"]`
+        );
+        const progressText = document.querySelector(
+          `.upload-progress-text[data-upload-id="${uploadId}"]`
+        );
+
+        if (progressBar && progressText) {
+          const progress = data.progress || 0;
+          progressBar.style.width = `${progress}%`;
+          progressText.textContent = `${progress}%`;
+
+          // Nếu tải lên hoàn tất, cập nhật giao diện
+          if (data.status === "completed" && progress === 100) {
+            setTimeout(() => {
+              const container = progressBar.closest(".upload-progress-wrapper");
+              if (container) {
+                container.style.display = "none";
+              }
+            }, 1000);
+          }
+        } else {
+          console.warn(
+            "Progress bar or text not found for uploadId:",
+            uploadId
+          );
+        }
+      })
+      .catch((error) => console.error("Error updating progress:", error));
+  }
 </script>
 
 {% endblock %}

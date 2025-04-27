@@ -27,7 +27,14 @@ def list_files():
         page = request.args.get('page', 1, type=int)
         per_page = 5
         files = []
-        docs = db.collection('files').offset((page - 1) * per_page).limit(per_page).stream()
+        
+        # Thêm sắp xếp theo upload_date giảm dần (mới nhất lên đầu)
+        docs = db.collection('files') \
+            .order_by('upload_date', direction=firestore.Query.DESCENDING) \
+            .offset((page - 1) * per_page) \
+            .limit(per_page) \
+            .stream()
+
         for doc in docs:
             data = doc.to_dict()
             files.append({
@@ -46,7 +53,7 @@ def list_files():
             })
 
         # Get total file count for pagination
-        total_files = db.collection('files').get()
+        total_files = [doc for doc in db.collection('files').stream()]
         total_pages = (len(total_files) + per_page - 1) // per_page
 
     except Exception as e:

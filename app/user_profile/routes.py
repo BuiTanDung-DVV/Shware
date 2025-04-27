@@ -4,6 +4,7 @@ from flask_login import login_required, current_user
 from ..auth.forms import ProfileUpdateForm
 from .. import db 
 from ..models.user import User
+from ..files_management.upload import upload_progress
 
 user_profile_bp = Blueprint('user_profile', __name__)
 db_firestore = firestore.client()
@@ -99,13 +100,22 @@ def profile():
     # Fetch user uploads from Firestore
     user_uploads = []
     try:
-        uploads_query = db_firestore.collection('files').where('author_id', '==', user_id).stream()
+        uploads_query = db_firestore.collection('files').where('author_id', '==', user_id).order_by('upload_date', direction=firestore.Query.DESCENDING).stream()
+            
         for doc in uploads_query:
             file_data = doc.to_dict()
             file_data['doc_id'] = doc.id
+            
+            # Add upload progress from cache if available
+            if file_data.get('upload_id') in upload_progress:
+                progress_data = upload_progress[file_data['upload_id']]
+                file_data['upload_progress'] = progress_data.get('progress', 0)
+                
             user_uploads.append(file_data)
     except Exception as e:
         flash(f"Error fetching user uploads: {e}", "danger")
 
     # Pass the user uploads to the template
-    return render_template('profile.html', user_info=user_info, form=form, has_password_provider=has_password_provider, user_uploads=user_uploads)
+    return render_template('profile.html', user_info=user_info, form=form, 
+                         has_password_provider=has_password_provider, 
+                         user_uploads=user_uploads)

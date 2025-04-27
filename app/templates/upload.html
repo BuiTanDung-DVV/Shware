@@ -6,6 +6,7 @@
       action="{{ url_for('upload.upload_file') }}"
       method="post"
       enctype="multipart/form-data"
+      id="uploadForm"
     >
       <!-- Flash messages -->
       {% with messages = get_flashed_messages(with_categories=true) %} {% if
