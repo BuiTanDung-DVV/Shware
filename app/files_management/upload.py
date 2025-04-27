@@ -6,6 +6,7 @@ import time
 import uuid
 from flask import Blueprint, request, redirect, render_template, flash, url_for, jsonify, session
 from flask_login import login_required, current_user
+from app import limiter
 from werkzeug.utils import secure_filename
 from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
@@ -125,6 +126,7 @@ def background_upload_task(upload_id, file_content, filename, title, description
 
 @upload_bp.route('/upload_files', methods=['GET', 'POST'])
 @login_required
+@limiter.limit("20 per hour")
 def upload_file():
     if request.method == 'POST':
         # Lấy file và thông tin từ form
@@ -215,6 +217,7 @@ def upload_file():
 
 @upload_bp.route('/upload_progress/<upload_id>', methods=['GET'])
 @login_required
+@limiter.limit("60 per minute")
 def get_upload_progress(upload_id):
     """API endpoint để lấy tiến độ tải lên"""
     # Check in-memory progress first
