@@ -1,5 +1,5 @@
 import os
-from flask import Blueprint, render_template, request
+from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
 from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
 import firebase_admin
@@ -27,7 +27,8 @@ def list_files():
     try:
         page = request.args.get('page', 1, type=int)
         per_page = 5
-
+        
+        #* filter logic
         # Thêm tham số sort_by và sort_direction
         sort_by = request.args.get('sort_by', 'upload_date')
         sort_direction = request.args.get('sort_direction', 'desc')
@@ -62,6 +63,9 @@ def list_files():
         query = query.offset((page - 1) * per_page).limit(per_page)
 
         files = []
+
+        # docs = query.stream()
+        #*end filter logic
         
         # Thêm sắp xếp theo upload_date giảm dần (mới nhất lên đầu)
         docs = db.collection('files') \
@@ -81,11 +85,14 @@ def list_files():
                 'description': data.get('description'),
                 'file_type': data.get('file_type'),
                 'file_size': data.get('file_size'),
-                'tags': data.get('tags', []),  # Giữ nguyên danh sách để dễ truy cập
+                'tags': data.get('tags', []),  
                 'tags_str': ', '.join(data.get('tags', [])),
                 'upload_date': data.get('upload_date'),
                 'download_url': data.get('download_url'),
-                'drive_file_id': data.get('drive_file_id')
+                'drive_file_id': data.get('drive_file_id'),
+                'thumbnail_url': data.get('thumbnail_url', url_for('static', filename='default-thumbnail.png')),
+                'avg_rating': data.get('avg_rating', 0),
+                'total_reviews': data.get('total_reviews', 0)
             })
 
         # Get total file count for pagination
@@ -101,37 +108,42 @@ def list_files():
 
         # Lấy tất cả loại file để hiển thị bộ lọc
         all_file_types = set()
-        all_tags = set()
+        all_tags = []
 
-        # Lấy một số lượng giới hạn để tránh quá tải
+        # Lấy file types từ một số lượng giới hạn files
         type_docs = db.collection('files').limit(100).stream()
         for doc in type_docs:
             data = doc.to_dict()
             all_file_types.add(data.get('file_type'))
-            for tag in data.get('tags', []):
-                all_tags.add(tag)
+
+        # Lấy tags từ collection tags, sắp xếp theo số lượng references
+        tags_docs = db.collection('tags').order_by('references', direction=firestore.Query.DESCENDING).stream()
+        for doc in tags_docs:
+            data = doc.to_dict()
+            if data.get('references', 0) > 0:  # Chỉ lấy những tags đang được sử dụng
+                all_tags.append(data.get('name'))
 
     except Exception as e:
         flash(f'Không thể tải danh sách tệp: {str(e)}')
         files = []
         total_pages = 1
         all_file_types = set()
-        all_tags = set()
+        all_tags = []
         sort_by = 'upload_date'
         sort_direction = 'desc'
         tag_filter = None
         file_type_filter = None
 
     return render_template('files.html',
-                           files=files,
-                           page=page,
-                           total_pages=total_pages,
-                           sort_by=sort_by,
-                           sort_direction=sort_direction,
-                           all_file_types=sorted(all_file_types),
-                           all_tags=sorted(all_tags),
-                           current_tag=tag_filter,
-                           current_file_type=file_type_filter)
+                         files=files,
+                         page=page,
+                         total_pages=total_pages,
+                         sort_by=sort_by,
+                         sort_direction=sort_direction,
+                         all_file_types=sorted(all_file_types),
+                         all_tags=all_tags,  # Không cần sort vì đã sắp xếp theo references
+                         current_tag=tag_filter,
+                         current_file_type=file_type_filter)
 @files_bp.route('/delete/<doc_id>', methods=['POST'])
 def delete_file(doc_id):
     try:
@@ -141,19 +153,38 @@ def delete_file(doc_id):
             flash('Không tìm thấy tệp để xóa!')
             return redirect(url_for('user_profile.profile', _anchor='uploads'))
 
-        drive_file_id = doc.to_dict().get('drive_file_id')
+        data = doc.to_dict()
+        
+        # Giảm references của các tags
+        tag_refs = data.get('tag_refs', [])
+        for tag_ref_id in tag_refs:
+            tag_ref = db.collection('tags').document(tag_ref_id)
+            tag_doc = tag_ref.get()
+            if tag_doc.exists:
+                current_refs = tag_doc.get('references')
+                if current_refs <= 1:
+                    # Nếu đây là reference cuối cùng, xóa tag
+                    tag_ref.delete()
+                else:
+                    # Giảm số references
+                    tag_ref.update({
+                        'references': firestore.Increment(-1)
+                    })
+
+        # Xóa file trên Google Drive
+        drive_file_id = data.get('drive_file_id')
         if drive_file_id:
             try:
                 service.files().delete(fileId=drive_file_id).execute()
             except Exception as e:
                 flash(f'Không thể xóa file trên Google Drive: {str(e)}')
 
+        # Xóa document trên Firestore
         doc_ref.delete()
         flash('Tệp đã được xóa thành công!', 'success')
     except Exception as e:
         flash(f'Không thể xóa tệp: {str(e)}', 'error')
 
-    # Redirect back to the profile page, specifically targeting the uploads tab
     return redirect(url_for('user_profile.profile', _anchor='uploads'))
 
 @files_bp.route('/file/<string:doc_id>')

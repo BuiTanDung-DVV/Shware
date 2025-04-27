@@ -1,5 +1,261 @@
 {% extends "base.html" %} {% from "_formhelpers.html" import render_field %} {%
-block title %}User Profile{% endblock %} {% block content %}
+block title %}User Profile{% endblock %} {% block styles %}
+<style>
+  /* Giao diện dạng cột cho danh sách file */
+  .uploads-column-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  /* Card cho từng file */
+  .file-card {
+    display: flex;
+    background-color: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    overflow: hidden;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+
+  .file-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  /* Thumbnail của file */
+  .file-card-thumbnail {
+    flex: 0 0 120px;
+    background-color: var(--light-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-right: 1px solid var(--border-color);
+  }
+
+  .file-card-thumbnail img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: cover;
+  }
+
+  /* Phần nội dung của card */
+  .file-card-content {
+    flex: 1;
+    padding: 12px 16px;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+
+  /* Tiêu đề file */
+  .file-card-title {
+    max-width: 700px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-weight: 500;
+    font-size: 1.1em;
+    margin-bottom: 8px;
+    color: var(--primary-color);
+    text-decoration: none;
+  }
+
+  .file-card-title:hover {
+    text-decoration: underline;
+  }
+
+  /* Thông tin meta của file */
+  .file-card-meta {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 10px;
+    font-size: 0.85em;
+    color: var(--text-color);
+    opacity: 0.7;
+  }
+
+  /* Loại file */
+  .file-card-type {
+    text-transform: uppercase;
+    font-weight: 500;
+    color: var(--secondary-color);
+  }
+
+  /* Phần actions */
+  .file-card-actions {
+    margin-top: 10px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+
+  /* Progress bar styling */
+  .upload-progress-wrapper {
+    width: 100%;
+    margin: 8px 0;
+    position: relative;
+  }
+
+  .upload-progress-container {
+    width: 100%;
+    height: 6px;
+    background-color: var(--light-color);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  .upload-progress-bar {
+    height: 100%;
+    background-color: var(--secondary-color);
+    transition: width 0.5s ease;
+    border-radius: 3px;
+  }
+
+  .upload-progress-text {
+    position: absolute;
+    right: 0;
+    bottom: -16px;
+    font-size: 12px;
+    color: var(--text-color);
+    opacity: 0.8;
+  }
+
+  /* Custom Tab Styles for Profile Page */
+  .profile-container {
+    max-width: 1100px;
+    margin: 20px auto;
+    padding: 20px;
+    background-color: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+  }
+
+  .profile-container .nav-tabs {
+    display: flex;
+    flex-wrap: nowrap;
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-left: 0;
+  }
+
+  .profile-container .nav-tabs .nav-item {
+    margin-right: 2px;
+  }
+
+  .profile-container .nav-tabs .nav-link {
+    background-color: #333;
+    color: #fff;
+    border: none;
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+    padding: 0.75rem 1.25rem;
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+
+  /* Style for inactive tabs on hover */
+  .profile-container .nav-tabs .nav-link:hover:not(.active) {
+    background-color: #555;
+    color: #fff;
+  }
+
+  /* Style for the active tab */
+  .profile-container .nav-tabs .nav-link.active {
+    background-color: var(--card-bg);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    border-bottom: none;
+    position: relative;
+    top: 1px;
+    font-weight: 600;
+    z-index: 2;
+  }
+
+  /* Style for the tab content area */
+  .profile-container .tab-content {
+    background-color: var(--card-bg);
+    padding: 1.5rem;
+    border: 1px solid var(--border-color);
+    border-top: none;
+    border-radius: 0 0 8px 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    position: relative;
+    z-index: 1;
+  }
+
+  .profile-grid {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 30px;
+  }
+
+  .profile-info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    background-color: var(--light-color);
+    padding: 1.5rem;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+  }
+
+  .profile-info h3 {
+    margin-bottom: 15px;
+    color: var(--text-color);
+  }
+
+  .profile-avatar {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    margin-bottom: 20px;
+    object-fit: cover;
+    border: 3px solid var(--border-color);
+  }
+
+  .profile-info p {
+    margin-bottom: 10px;
+    color: var(--text-color);
+  }
+
+  .profile-update-form {
+    background-color: var(--card-bg);
+    padding: 1.5rem;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+  }
+
+  .profile-update-form h3 {
+    color: var(--text-color);
+    margin-bottom: 1.5rem;
+  }
+
+  .profile-update-form h4 {
+    margin-top: 20px;
+    margin-bottom: 10px;
+    color: var(--text-color);
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .profile-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .file-card {
+      flex-direction: column;
+    }
+
+    .file-card-thumbnail {
+      height: 140px;
+      flex: none;
+      border-right: none;
+      border-bottom: 1px solid var(--border-color);
+    }
+  }
+</style>
+{% endblock %} {% block content %}
 <div class="profile-container">
   <h2>User Dashboard</h2>
   <ul class="nav nav-tabs" id="profileTabs" role="tablist">
@@ -182,142 +438,6 @@ block title %}User Profile{% endblock %} {% block content %}
     </div>
   </div>
 </div>
-
-<style>
-  /* Giao diện dạng cột cho danh sách file */
-  .uploads-column-layout {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-  }
-
-  /* Card cho từng file */
-  .file-card {
-    display: flex;
-    background-color: var(--card-bg);
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    overflow: hidden;
-    transition: transform 0.2s, box-shadow 0.2s;
-  }
-
-  .file-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  }
-
-  /* Thumbnail của file */
-  .file-card-thumbnail {
-    flex: 0 0 120px;
-    background-color: var(--light-color);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-right: 1px solid var(--border-color);
-  }
-
-  .file-card-thumbnail img {
-    max-width: 100%;
-    max-height: 100%;
-    object-fit: cover;
-  }
-
-  /* Phần nội dung của card */
-  .file-card-content {
-    flex: 1;
-    padding: 12px 16px;
-    display: flex;
-    flex-direction: column;
-    position: relative;
-  }
-
-  /* Tiêu đề file */
-  .file-card-title {
-    max-width: 700px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    font-weight: 500;
-    font-size: 1.1em;
-    margin-bottom: 8px;
-    color: var(--primary-color);
-    text-decoration: none;
-  }
-
-  .file-card-title:hover {
-    text-decoration: underline;
-  }
-
-  /* Thông tin meta của file */
-  .file-card-meta {
-    display: flex;
-    gap: 12px;
-    margin-bottom: 10px;
-    font-size: 0.85em;
-    color: var(--text-color);
-    opacity: 0.7;
-  }
-
-  /* Loại file */
-  .file-card-type {
-    text-transform: uppercase;
-    font-weight: 500;
-    color: var(--secondary-color);
-  }
-
-  /* Phần actions */
-  .file-card-actions {
-    margin-top: 10px;
-    display: flex;
-    justify-content: flex-end;
-    gap: 8px;
-  }
-
-  /* Progress bar styling */
-  .upload-progress-wrapper {
-    width: 100%;
-    margin: 8px 0;
-    position: relative;
-  }
-
-  .upload-progress-container {
-    width: 100%;
-    height: 6px;
-    background-color: var(--light-color);
-    border-radius: 3px;
-    overflow: hidden;
-  }
-
-  .upload-progress-bar {
-    height: 100%;
-    background-color: var(--secondary-color);
-    transition: width 0.5s ease;
-    border-radius: 3px;
-  }
-
-  .upload-progress-text {
-    position: absolute;
-    right: 0;
-    bottom: -16px;
-    font-size: 12px;
-    color: var(--text-color);
-    opacity: 0.8;
-  }
-
-  /* Responsive styling */
-  @media (max-width: 576px) {
-    .file-card {
-      flex-direction: column;
-    }
-
-    .file-card-thumbnail {
-      height: 140px;
-      flex: none;
-      border-right: none;
-      border-bottom: 1px solid var(--border-color);
-    }
-  }
-</style>
 
 <script>
   document.addEventListener("DOMContentLoaded", function () {

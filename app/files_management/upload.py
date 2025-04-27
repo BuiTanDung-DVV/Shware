@@ -92,16 +92,47 @@ def background_upload_task(upload_id, file_content, filename, title, description
             if status:
                 uploaded = int(status.resumable_progress)
                 percent = int((uploaded / file_size) * 85) if file_size else 85
-                print(f"Uploaded {uploaded} of {file_size} bytes ({percent}%)")
                 upload_progress[upload_id]['progress'] = min(percent, 85)  # Tối đa 85% khi tải lên
         # Sau khi tải lên xong, đặt tiến độ là 90%
         upload_progress[upload_id]['progress'] = 90
 
         # Cập nhật tài liệu hiện có trong Firestore
         current_time = datetime.utcnow()
+        
+        # Xử lý tags
+        tag_refs = []
+        for tag_name in tags:
+            # Tìm tag trong collection tags
+            tag_query = db.collection('tags').where(filter=firestore.FieldFilter('name', '==', tag_name.lower())).limit(1).stream()
+            tag_doc = None
+            for doc in tag_query:
+                tag_doc = doc
+                break
+            
+            if tag_doc:
+                # Tag đã tồn tại, tăng số references
+                tag_ref = db.collection('tags').document(tag_doc.id)
+                tag_ref.update({
+                    'references': firestore.Increment(1)
+                })
+                tag_refs.append(tag_ref)
+            else:
+                # Tag chưa tồn tại, tạo mới
+                new_tag_ref = db.collection('tags').add({
+                    'name': tag_name.lower(),
+                    'references': 1,
+                    'created_at': current_time.isoformat()
+                })[1]  # [1] là DocumentReference
+                tag_refs.append(new_tag_ref)
+
         db.collection('files').document(doc_id).update({
+            'author': current_user_name,
+            'author_id': current_user_id,
+            'email': current_user_email,
+            'profile_pic': current_user_profile_pic,
             'description': description,
             'tags': tags,
+            'tag_refs': [ref.id for ref in tag_refs],  # Lưu references đến các tags
             'upload_date': current_time.isoformat(),
             'download_url': response.get('webViewLink'),
             'drive_file_id': response.get('id'),
@@ -110,12 +141,14 @@ def background_upload_task(upload_id, file_content, filename, title, description
             'total_rating_sum': 0,
             'upload_status': 'completed'
         })
+
         upload_progress[upload_id]['progress'] = 100
         upload_progress[upload_id]['status'] = 'completed'
         
         # Xóa mục tiến độ sau khi hoàn tất
         if upload_id in upload_progress:
             del upload_progress[upload_id]
+            
     except Exception as e:
         print(f"Lỗi tải lên nền: {e}")
         upload_progress[upload_id]['status'] = 'failed'
@@ -124,10 +157,31 @@ def background_upload_task(upload_id, file_content, filename, title, description
         if upload_id in upload_progress:
             del upload_progress[upload_id]
 
+        # Nếu có lỗi, cập nhật trạng thái tệp
+        try:
+            db.collection('files').document(doc_id).update({
+                'upload_status': 'failed',
+                'error_message': str(e)
+            })
+        except:
+            pass  # Ignore errors when updating error status
+
 @upload_bp.route('/upload_files', methods=['GET', 'POST'])
 @login_required
-@limiter.limit("20 per hour")
+# @limiter.limit("20 per hour")
 def upload_file():
+    # Lấy tất cả tags từ collection tags, kể cả reference = 0
+    all_tags = []
+    try:
+        tags_docs = db.collection('tags').stream()
+        for doc in tags_docs:
+            tag_data = doc.to_dict()
+            all_tags.append(tag_data.get('name'))
+    except Exception as e:
+        print(f"Error fetching tags: {e}")
+        # Fallback to empty list if there's an error
+        all_tags = []
+
     if request.method == 'POST':
         # Lấy file và thông tin từ form
         file = request.files.get('file')
@@ -212,7 +266,7 @@ def upload_file():
             flash(f'Đã xảy ra lỗi: {str(e)}', 'error')
             return redirect(request.url)
 
-    return render_template('upload.html')
+    return render_template('upload.html', all_tags=all_tags)
 
 
 @upload_bp.route('/upload_progress/<upload_id>', methods=['GET'])

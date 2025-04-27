@@ -77,55 +77,38 @@
         ></textarea>
       </div>
 
-      <!-- Tags as checkboxes - Improved UI -->
+      <!-- Tags as checkboxes - Dynamic from Firestore -->
       <div class="form-group">
         <label>Thẻ (chọn ít nhất một) *</label>
         <div class="tags-container">
-          <div class="tag-item">
-            <input
-              type="checkbox"
-              id="tag-congnghe"
-              name="tags"
-              value="công nghệ"
-            />
-            <label for="tag-congnghe">Công nghệ</label>
+          <div class="tags-wrapper">
+            {% for tag in all_tags %}
+            <div class="tag-item">
+              <input
+                type="checkbox"
+                id="tag-{{ tag|lower|replace(' ', '') }}"
+                name="tags"
+                value="{{ tag }}"
+              />
+              <label for="tag-{{ tag|lower|replace(' ', '') }}"
+                >{{ tag }}</label
+              >
+            </div>
+            {% endfor %}
           </div>
-          <div class="tag-item">
+          <!-- Custom tag input -->
+          <div class="custom-tag">
             <input
-              type="checkbox"
-              id="tag-giaoduc"
-              name="tags"
-              value="giáo dục"
+              type="text"
+              id="custom-tag"
+              placeholder="Thêm thẻ tùy chỉnh"
             />
-            <label for="tag-giaoduc">Giáo dục</label>
+            <button type="button" id="add-custom-tag" class="btn btn-sm">
+              +
+            </button>
           </div>
-          <div class="tag-item">
-            <input
-              type="checkbox"
-              id="tag-phanmem"
-              name="tags"
-              value="phần mềm"
-            />
-            <label for="tag-phanmem">Phần mềm</label>
-          </div>
-          <div class="tag-item">
-            <input
-              type="checkbox"
-              id="tag-tailieukhac"
-              name="tags"
-              value="tài liệu khác"
-            />
-            <label for="tag-tailieukhac">Tài liệu khác</label>
-          </div>
+          <div id="custom-tags-container"></div>
         </div>
-        <!-- Custom tag input -->
-        <div class="custom-tag">
-          <input type="text" id="custom-tag" placeholder="Thêm thẻ tùy chỉnh" />
-          <button type="button" id="add-custom-tag" class="btn btn-sm">
-            +
-          </button>
-        </div>
-        <div id="custom-tags-container"></div>
       </div>
 
       <!-- Submit Button -->
@@ -161,99 +144,217 @@
     object-fit: contain;
   }
 
+  /* Updated Tags Container Styles */
   .tags-container {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    margin-bottom: 10px;
+    position: relative;
+    margin-bottom: 20px;
+    padding: 10px 0;
+  }
+
+  .tags-wrapper {
+    display: grid;
+    grid-template-columns: repeat(
+      3,
+      minmax(140px, 1fr)
+    ); /* 3 cột cố định width tối thiểu */
+    grid-template-rows: repeat(2, 32px); /* 2 hàng, mỗi hàng cao 32px */
+    gap: 8px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-bottom: 12px; /* Chừa chỗ cho scrollbar */
+    grid-auto-flow: column; /* Tags mới sẽ tạo cột mới */
+    grid-auto-columns: minmax(
+      150px,
+      1fr
+    ); /* Cột mới có width cố định như các cột ban đầu */
+    scroll-snap-type: x mandatory; /* Thêm scroll snap */
+    scroll-padding: 8px;
+  }
+
+  /* Tùy chỉnh scrollbar cho Webkit browsers */
+  .tags-wrapper::-webkit-scrollbar {
+    height: 6px;
+    width: 6px;
+  }
+
+  .tags-wrapper::-webkit-scrollbar-track {
+    background: var(--light-color);
+    border-radius: 3px;
+  }
+
+  .tags-wrapper::-webkit-scrollbar-thumb {
+    background: var(--primary-color);
+    border-radius: 3px;
+    opacity: 0.8;
+  }
+
+  .tags-wrapper::-webkit-scrollbar-thumb:hover {
+    opacity: 1;
+  }
+
+  /* Tùy chỉnh scrollbar cho Firefox */
+  .tags-wrapper {
+    scrollbar-width: thin;
+    scrollbar-color: var(--primary-color) var(--light-color);
   }
 
   .tag-item {
+    min-width: 0;
+    width: 100%; /* Đảm bảo tag item luôn full width của cell */
+    height: 32px;
+    background-color: var(--light-color);
+    padding: 0 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    border: 1px solid var(--border-color);
+    transition: all 0.2s ease;
     display: flex;
     align-items: center;
-    background-color: var(--light-color);
-    padding: 3px 8px;
-    border-radius: 3px;
-    cursor: pointer;
-    font-size: 0.9rem;
-    color: var(--text-color); /* Sử dụng biến CSS cho màu chữ */
-    border: 1px solid var(--border-color);
-  }
-
-  .tag-item:hover {
-    background-color: var(--dropdown-item-hover-bg);
-    color: var(--dropdown-item-hover-text);
+    scroll-snap-align: start; /* Thêm scroll snap cho từng item */
+    flex-shrink: 0; /* Ngăn không cho tag co lại */
   }
 
   .tag-item input[type="checkbox"] {
-    margin-right: 4px;
+    width: 14px;
+    height: 14px;
+    margin: 0;
+    padding: 0;
+    cursor: pointer;
+    flex-shrink: 0;
   }
 
   .tag-item label {
+    margin: 0 0 0 4px;
+    padding: 0;
     cursor: pointer;
-    color: inherit; /* Kế thừa màu từ phần tử cha */
+    color: var(--text-color);
+    font-size: 0.85rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    user-select: none;
+    flex: 1;
   }
 
+  .tag-item:hover {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+  }
+
+  .tag-item:hover label {
+    color: white;
+  }
+
+  .tag-item.selected {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+  }
+
+  .tag-item.selected label {
+    color: white;
+  }
+
+  /* Custom tag input styles */
   .custom-tag {
     display: flex;
-    gap: 6px;
-    margin-bottom: 8px;
+    gap: 10px;
+    margin-top: 20px;
+    position: relative;
   }
 
   #custom-tag {
     flex-grow: 1;
-    padding: 4px 8px;
+    padding: 8px 12px;
     font-size: 0.9rem;
     background-color: var(--input-bg);
     color: var(--text-color);
     border: 1px solid var(--input-border);
-    border-radius: 4px;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+  }
+
+  #custom-tag:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.25);
   }
 
   #add-custom-tag {
-    padding: 2px 8px;
-    font-size: 0.9rem;
-    background-color: var(--light-color);
-    border: 1px solid var(--border-color);
-    color: var(--text-color);
+    padding: 8px 15px;
+    font-size: 1rem;
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+  }
+
+  #add-custom-tag:hover {
+    background-color: var(--link-hover-color);
+    transform: translateY(-2px);
   }
 
   #custom-tags-container {
     display: flex;
     flex-wrap: wrap;
-    gap: 4px;
-    margin-top: 6px;
+    gap: 8px;
+    margin-top: 10px;
   }
 
   .custom-tag-item {
     background-color: var(--primary-color);
-    padding: 3px 8px;
-    border-radius: 3px;
+    color: white;
+    padding: 5px 12px;
+    border-radius: 6px;
     display: flex;
     align-items: center;
+    gap: 8px;
     font-size: 0.9rem;
-    color: white; /* Sử dụng màu trắng cho tag tùy chỉnh để nổi bật */
+    animation: slideIn 0.3s ease;
+  }
+
+  @keyframes slideIn {
+    from {
+      transform: translateY(-10px);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
   }
 
   .remove-tag {
-    margin-left: 4px;
     cursor: pointer;
-    color: white;
-    font-weight: bold;
+    font-size: 1.2rem;
+    line-height: 1;
+    opacity: 0.8;
+    transition: opacity 0.2s ease;
   }
 
-  /* Styling for readonly author field */
-  input[readonly] {
-    background-color: var(--light-color);
-    border: 1px solid var(--border-color);
-    color: var(--text-color);
+  .remove-tag:hover {
+    opacity: 1;
   }
 
-  .form-text {
-    color: var(--text-color);
-    opacity: 0.7;
-    font-size: 0.8rem;
-    margin-top: 3px;
+  /* Responsive adjustments */
+  @media (max-width: 992px) {
+    .tags-wrapper {
+      grid-template-columns: repeat(3, minmax(130px, 1fr));
+      grid-auto-columns: minmax(130px, 1fr);
+    }
+  }
+
+  @media (max-width: 768px) {
+    .tags-wrapper {
+      grid-template-columns: repeat(2, minmax(120px, 1fr));
+      grid-auto-columns: minmax(120px, 1fr);
+    }
+  }
+
+  @media (max-width: 480px) {
+    .tags-wrapper {
+      grid-template-columns: repeat(2, minmax(100px, 1fr));
+      grid-auto-columns: minmax(100px, 1fr);
+    }
   }
 </style>
 
@@ -307,9 +408,9 @@
       const tagItem = document.createElement("div");
       tagItem.className = "custom-tag-item";
       tagItem.innerHTML = `
-            ${tagValue}
-            <span class="remove-tag">&times;</span>
-        `;
+          ${tagValue}
+          <span class="remove-tag">&times;</span>
+      `;
 
       // Add remove functionality
       const removeBtn = tagItem.querySelector(".remove-tag");
@@ -321,6 +422,68 @@
       customTagsContainer.appendChild(tagItem);
       tagItem.appendChild(hiddenInput);
     }
+
+    // Add selected state for tags
+    const tagItems = document.querySelectorAll(".tag-item");
+    tagItems.forEach((item) => {
+      const checkbox = item.querySelector('input[type="checkbox"]');
+
+      item.addEventListener("click", (e) => {
+        if (e.target !== checkbox) {
+          checkbox.checked = !checkbox.checked;
+        }
+        item.classList.toggle("selected", checkbox.checked);
+      });
+
+      checkbox.addEventListener("change", () => {
+        item.classList.toggle("selected", checkbox.checked);
+      });
+    });
+
+    // Scroll handling with smooth animation
+    const tagsWrapper = document.querySelector(".tags-wrapper");
+    let isScrolling;
+
+    // Add smooth scroll on wheel event
+    tagsWrapper.addEventListener(
+      "wheel",
+      function (e) {
+        e.preventDefault();
+
+        const delta = e.deltaY || e.deltaX;
+        tagsWrapper.scrollLeft += delta;
+
+        // Clear the timeout on new scroll
+        window.clearTimeout(isScrolling);
+
+        // Set a timeout to run after scrolling ends
+        isScrolling = setTimeout(function () {
+          // Run after scrolling ends
+        }, 66);
+      },
+      { passive: false }
+    );
+
+    // Add touch scroll handling for mobile
+    let touchStart = null;
+    let scrollLeft = 0;
+
+    tagsWrapper.addEventListener("touchstart", (e) => {
+      touchStart = e.touches[0].pageX;
+      scrollLeft = tagsWrapper.scrollLeft;
+    });
+
+    tagsWrapper.addEventListener("touchmove", (e) => {
+      if (!touchStart) return;
+
+      const delta = touchStart - e.touches[0].pageX;
+      tagsWrapper.scrollLeft = scrollLeft + delta;
+    });
+
+    tagsWrapper.addEventListener("touchend", () => {
+      touchStart = null;
+    });
   });
 </script>
+
 {% endblock %}

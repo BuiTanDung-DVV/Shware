@@ -1,73 +1,283 @@
-{% extends 'base.html' %} {% block title %}Search Results for "{{ query }}" |
-Shware{% endblock %} {% block content %}
+{% extends 'base.html' %}
+
+{% block title %}Search Results for "{{ query }}" | Shware{% endblock %}
+
+{% block styles %}
+<style>
+.search-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.filter-controls {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.filter-button, .clear-filters-button {
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+    font-size: 0.95rem;
+}
+
+.filter-button {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+}
+
+.clear-filters-button {
+    background-color: transparent;
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+}
+
+.filter-button:hover {
+    background-color: var(--link-hover-color);
+    transform: translateY(-1px);
+}
+
+.clear-filters-button:hover {
+    background-color: var(--light-color);
+    border-color: var(--text-color);
+    transform: translateY(-1px);
+}
+
+.filter-button i, .clear-filters-button i {
+    font-size: 0.9em;
+}
+
+.filter-panel {
+    display: none;
+    position: absolute;
+    right: 0;
+    top: 100%;
+    background: var(--card-bg);
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    z-index: 999;
+    width: 300px;
+    margin-top: 8px;
+    border: 1px solid var(--border-color);
+}
+
+.search-controls {
+    position: relative;
+}
+
+.filter-panel.active {
+    display: block;
+}
+
+.filter-section {
+    margin-bottom: 15px;
+}
+
+.filter-section label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+    color: var(--text-color);
+}
+
+.filter-section select {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background-color: var(--input-bg);
+    color: var(--text-color);
+}
+
+.filter-section select:focus {
+    border-color: var(--primary-color);
+    outline: none;
+}
+
+.apply-filters {
+    width: 100%;
+    padding: 10px;
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.apply-filters:hover {
+    background-color: var(--link-hover-color);
+}
+
+/* Dark theme support */
+.dark-theme .filter-panel {
+    background: var(--card-bg);
+    border-color: var(--border-color);
+}
+
+.dark-theme .filter-section select {
+    background-color: var(--input-bg);
+    color: var(--text-color);
+    border-color: var(--border-color);
+}
+
+.dark-theme .filter-section select option {
+    background-color: var(--card-bg);
+    color: var(--text-color);
+}
+
+.dark-theme .clear-filters-button {
+    color: var(--text-color);
+    border-color: var(--border-color);
+}
+
+.dark-theme .clear-filters-button:hover {
+    background-color: var(--light-color);
+    border-color: var(--text-color);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='home.css') }}"
+    />
 <div class="container mt-5">
-  <h2 class="mb-4 text-center">🔍 Kết quả tìm kiếm cho: "{{ query }}"</h2>
+    <div class="search-header">
+        <h2 class="mb-0">🔍 Kết quả tìm kiếm cho: "{{ query }}"</h2>
+        <div class="search-controls">
+            <div class="filter-controls">
+                {% if current_file_type or current_tag or sort_by != 'upload_date' or sort_direction != 'desc' %}
+                <a href="{{ url_for('search.search', q=query) }}" class="clear-filters-button">
+                    <i class="fas fa-times"></i> Hủy lọc
+                </a>
+                {% endif %}
+                <button class="filter-button" onclick="toggleFilterPanel()">
+                    <i class="fas fa-filter"></i> Bộ lọc
+                </button>
+            </div>
 
-  {% if not current_user.is_authenticated %}
-  <div class="alert alert-warning text-center fs-5">
-    🔒 Vui lòng
-    <a href="{{ url_for('auth.login') }}" class="alert-link">đăng nhập</a> để có
-    thể tải file.
-  </div>
-  {% endif %} {% if results %}
-  <div class="file-list mt-4">
-    {% for file in results %}
-    <div class="file-card">
-      <!-- Image Placeholder with overlay for rating -->
-      <a
-        href="{{ url_for('files.file_detail', doc_id=file.doc_id) }}"
-        class="file-image-container"
-      >
-        <img
-          src="{{ file.thumbnail_url }}"
-          alt="{{ file.title }}"
-          class="file-thumbnail"
-        />
-        <!-- Rating badge -->
-        <div class="rating-badge">
-          <i class="fas fa-star"></i> {{ (file.avg_rating * 20) | int }}/5 sao
+            <!-- Filter Panel -->
+            <div class="filter-panel" id="filterPanel">
+                <form id="filterForm" method="GET" action="{{ url_for('search.search') }}">
+                    <input type="hidden" name="q" value="{{ query }}">
+                    
+                    <div class="filter-section">
+                        <label for="sort_by">Sắp xếp theo:</label>
+                        <select name="sort_by" id="sort_by">
+                            <option value="upload_date" {% if sort_by == 'upload_date' %}selected{% endif %}>Ngày tải lên</option>
+                            <option value="title" {% if sort_by == 'title' %}selected{% endif %}>Tên file</option>
+                            <option value="file_type" {% if sort_by == 'file_type' %}selected{% endif %}>Loại file</option>
+                            <option value="file_size" {% if sort_by == 'file_size' %}selected{% endif %}>Kích thước</option>
+                        </select>
+                    </div>
+
+                    <div class="filter-section">
+                        <label for="sort_direction">Thứ tự:</label>
+                        <select name="sort_direction" id="sort_direction">
+                            <option value="desc" {% if sort_direction == 'desc' %}selected{% endif %}>Giảm dần</option>
+                            <option value="asc" {% if sort_direction == 'asc' %}selected{% endif %}>Tăng dần</option>
+                        </select>
+                    </div>
+
+                    <div class="filter-section">
+                        <label for="file_type">Loại file:</label>
+                        <select name="file_type" id="file_type">
+                            <option value="">Tất cả</option>
+                            {% for type in all_file_types %}
+                            <option value="{{ type }}" {% if current_file_type == type %}selected{% endif %}>{{ type }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="filter-section">
+                        <label for="tag">Tag:</label>
+                        <select name="tag" id="tag">
+                            <option value="">Tất cả</option>
+                            {% for tag in all_tags %}
+                            <option value="{{ tag }}" {% if current_tag == tag %}selected{% endif %}>{{ tag }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <button type="submit" class="apply-filters">Áp dụng bộ lọc</button>
+                </form>
+            </div>
         </div>
-      </a>
-
-      <div class="file-info">
-        <h5 class="file-title">{{ file.title }}</h5>
-        <div class="file-tags">
-          {% if file.tags %} {% for tag in file.tags.split(',') %}
-          <span class="file-tag">{{ tag.strip() }}</span>
-          {% endfor %} {% endif %}
-        </div>
-      </div>
-
-      <div class="file-actions">
-        <a
-          href="{{ url_for('files.file_detail', doc_id=file.doc_id) }}"
-          class="file-btn download-btn"
-        >
-          <i class="fas fa-download"></i> Tải xuống
-        </a>
-        <a
-          href="{{ url_for('files.file_detail', doc_id=file.doc_id) }}"
-          class="file-btn review-btn"
-        >
-          <i class="fas fa-star"></i> Đánh giá
-        </a>
-      </div>
     </div>
-    {% endfor %}
-  </div>
-  {% else %} {% if query %}
-  <div class="alert alert-info text-center fs-5 mt-4">
-    Không tìm thấy tệp nào phù hợp với tìm kiếm của bạn.
-  </div>
-  {% endif %} {% endif %}
+
+    {% if not current_user.is_authenticated %}
+    <div class="alert alert-warning text-center fs-5 mt-4">
+        🔒 Vui lòng <a href="{{ url_for('auth.login') }}" class="alert-link">đăng nhập</a> để có thể tải file.
+    </div>
+    {% endif %}
+
+    {% if results %}
+    <div class="file-list">
+        {% for file in results %}
+        <div class="file-card">
+            <a href="{{ url_for('files.file_detail', doc_id=file.doc_id) }}" class="file-image-container">
+                <img src="{{ file.thumbnail_url }}" alt="{{ file.title }}" class="file-thumbnail" />
+            </a>
+
+            <div class="file-info">
+                <h5 class="file-title">{{ file.title }}</h5>
+                <div class="file-tags">
+                    {% if file.tags %}
+                        {% for tag in file.tags %}
+                            <span class="file-tag">{{ tag }}</span>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="file-actions">
+                <a href="{{ url_for('files.file_detail', doc_id=file.doc_id) }}" class="file-btn download-btn">
+                    <i class="fas fa-download"></i> Tải xuống
+                </a>
+                <a href="{{ url_for('files.file_detail', doc_id=file.doc_id) }}" class="file-btn review-btn">
+                    <i class="fas fa-star"></i> {{ (file.avg_rating) | int }}/5 sao
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+        {% if query %}
+        <div class="alert alert-info text-center fs-5 mt-4">
+            Không tìm thấy tệp nào phù hợp với tìm kiếm của bạn.
+        </div>
+        {% endif %}
+    {% endif %}
 </div>
 
-{# Link the home.css for grid styles #}
-<link rel="stylesheet" href="{{ url_for('static', filename='home.css') }}" />
-<!-- Font Awesome for icons -->
-<link
-  rel="stylesheet"
-  href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
-/>
+{% block scripts %}
+<script>
+function toggleFilterPanel() {
+    const panel = document.getElementById('filterPanel');
+    panel.classList.toggle('active');
+}
+
+// Đóng panel khi click ra ngoài
+document.addEventListener('click', function(event) {
+    const panel = document.getElementById('filterPanel');
+    const filterButton = document.querySelector('.filter-button');
+    
+    if (!panel.contains(event.target) && !filterButton.contains(event.target)) {
+        panel.classList.remove('active');
+    }
+});
+</script>
+{% endblock %}
 
 {% endblock %}

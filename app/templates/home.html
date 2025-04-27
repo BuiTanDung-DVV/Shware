@@ -1,4 +1,11 @@
-{% extends 'base.html' %} {% block content %}
+{% extends 'base.html' %} {% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='home.css') }}" />
+<!-- Font Awesome for icons -->
+<link
+  rel="stylesheet"
+  href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
+/>
+{% endblock %} {% block content %}
 <div class="container mt-5">
   <h2 class="mb-4 text-center display-5">📂 Kho Tài Liệu Chia Sẻ</h2>
 
@@ -92,8 +99,8 @@
       <div class="file-info">
         <h5 class="file-title">{{ file.title }}</h5>
         <div class="file-tags">
-          {% if file.tags %} {% for tag in file.tags.split(',') %}
-          <span class="file-tag">{{ tag.strip() }}</span>
+          {% if file.tags %} {% for tag in file.tags %}
+          <span class="file-tag">{{ tag }}</span>
           {% endfor %} {% endif %}
         </div>
       </div>
@@ -140,13 +147,6 @@
   </div>
   {% endif %}
 </div>
-
-<link rel="stylesheet" href="{{ url_for('static', filename='home.css') }}" />
-<!-- Font Awesome for icons -->
-<link
-  rel="stylesheet"
-  href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
-/>
 
 <script>
   document.addEventListener("DOMContentLoaded", function () {

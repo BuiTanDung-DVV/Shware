@@ -65,8 +65,8 @@ def create_app(config_class=Config):
         if not s:
             return "N/A" # Handle cases where timestamp might be None
         try:
-            # Assuming s is a Unix timestamp (seconds since epoch)
-            return datetime.utcfromtimestamp(float(s)).strftime('%Y-%m-%d %H:%M:%S UTC')
+            
+            return datetime.fromtimestamp(float(s)).strftime('%Y-%m-%d %H:%M:%S UTC')
         except (ValueError, TypeError):
             return "Invalid Date"
 
@@ -84,6 +84,8 @@ def create_app(config_class=Config):
     from app.main.routes import main_bp
     app.register_blueprint(main_bp)
 
+    from app.search.routes import search_bp
+    app.register_blueprint(search_bp)
     from app.files_management.upload import upload_bp
     app.register_blueprint(upload_bp)
 
