@@ -2,21 +2,43 @@
 content %}
 <section class="auth-form">
   <h2>Login</h2>
-  <form method="POST" action="{{ url_for('auth.login') }}">
+  <form id="login-form" onsubmit="return false;">
     {{ form.csrf_token }}
-
     <div class="form-group">
       <label for="email">Email</label>
-      {{ form.email(class="form-control") }}
+      <input
+        type="email"
+        class="form-control"
+        id="email"
+        name="email"
+        required
+      />
+      <div class="invalid-feedback" id="emailError"></div>
     </div>
-
     <div class="form-group">
       <label for="password">Password</label>
-      {{ form.password(class="form-control") }}
+      <input
+        type="password"
+        class="form-control"
+        id="password"
+        name="password"
+        required
+        minlength="6"
+      />
+      <div class="invalid-feedback" id="passwordError"></div>
     </div>
 
+    <div id="loginError" class="alert alert-danger" style="display: none"></div>
+
     <div class="form-actions">
-      <button type="submit" class="btn btn-primary">Login</button>
+      <button type="submit" class="btn btn-primary" id="loginButton">
+        <span class="button-text">Login</span>
+        <span
+          class="spinner-border spinner-border-sm d-none"
+          role="status"
+          aria-hidden="true"
+        ></span>
+      </button>
     </div>
   </form>
 
@@ -57,49 +79,144 @@ content %}
   // Initialize Firebase
   firebase.initializeApp(firebaseConfig);
 
-  // Sign out any existing users before showing the login UI
+  // Handle form submission for login
+  document
+    .getElementById("login-form")
+    .addEventListener("submit", async function (event) {
+      event.preventDefault();
+
+      const emailField = document.getElementById("email");
+      const passwordField = document.getElementById("password");
+      const loginButton = document.getElementById("loginButton");
+      const buttonText = loginButton.querySelector(".button-text");
+      const spinner = loginButton.querySelector(".spinner-border");
+      const loginError = document.getElementById("loginError");
+
+      // Reset previous errors
+      emailField.classList.remove("is-invalid");
+      passwordField.classList.remove("is-invalid");
+      loginError.style.display = "none";
+
+      // Show loading state
+      buttonText.textContent = "Logging in...";
+      spinner.classList.remove("d-none");
+      loginButton.disabled = true;
+
+      try {
+        // Authenticate with Firebase
+        const userCredential = await firebase
+          .auth()
+          .signInWithEmailAndPassword(emailField.value, passwordField.value);
+
+        // Get the ID token
+        const idToken = await userCredential.user.getIdToken();
+
+        // Send the ID token to the server for verification
+        const response = await fetch(
+          "{{ url_for('auth.handle_firebase_auth') }}",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-CSRF-Token": "{{ form.csrf_token._value() }}",
+            },
+            body: JSON.stringify({ idToken: idToken }),
+          }
+        );
+
+        if (response.ok) {
+          // Redirect to the home page on successful login
+          window.location.href = "{{ url_for('main.home') }}";
+        } else {
+          const errorData = await response.json();
+          throw new Error(errorData.error || "Server authentication failed");
+        }
+      } catch (error) {
+        // Handle specific Firebase auth errors
+        let errorMessage = "An error occurred during login.";
+
+        switch (error.code) {
+          case "auth/wrong-password":
+          case "auth/invalid-login-credentials": // Add this case
+            passwordField.classList.add("is-invalid");
+            errorMessage = "Invalid email or password. Please try again.";
+            break;
+          case "auth/user-not-found":
+            emailField.classList.add("is-invalid");
+            errorMessage = "No account found with this email address.";
+            break;
+          case "auth/too-many-requests":
+            errorMessage =
+              "Too many failed login attempts. Please try again later or reset your password.";
+            break;
+          case "auth/invalid-email":
+            emailField.classList.add("is-invalid");
+            errorMessage = "Please enter a valid email address.";
+            break;
+          case "auth/network-request-failed":
+            errorMessage =
+              "Network error. Please check your internet connection and try again.";
+            break;
+          default:
+            console.error("Firebase auth error:", error);
+            if (
+              error.message &&
+              error.message.includes("INVALID_LOGIN_CREDENTIALS")
+            ) {
+              passwordField.classList.add("is-invalid");
+              errorMessage = "Invalid email or password. Please try again.";
+            } else if (error.message) {
+              errorMessage = error.message;
+            }
+        }
+
+        loginError.textContent = errorMessage;
+        loginError.style.display = "block";
+      } finally {
+        // Reset button state
+        buttonText.textContent = "Login";
+        spinner.classList.add("d-none");
+        loginButton.disabled = false;
+      }
+    });
+
+  // Setup Google Sign-in
   firebase
     .auth()
     .signOut()
     .then(() => {
-      // Initialize the FirebaseUI Widget using Firebase
       const ui = new firebaseui.auth.AuthUI(firebase.auth());
-
-      // Configure FirebaseUI
       ui.start("#firebaseui-auth-container", {
         signInOptions: [
-          // Enable Google provider with custom parameters
           {
             provider: firebase.auth.GoogleAuthProvider.PROVIDER_ID,
-            customParameters: {
-              prompt: "select_account", // This forces the account picker to appear
-            },
+            customParameters: { prompt: "select_account" },
           },
         ],
         signInFlow: "popup",
         callbacks: {
-          signInSuccessWithAuthResult: function (authResult, redirectUrl) {
-            // Get the user's ID token
-            authResult.user.getIdToken().then(function (idToken) {
-              // Send the ID token to your server
-              fetch('{{ url_for("auth.handle_firebase_auth") }}', {
+          signInSuccessWithAuthResult: function (authResult) {
+            authResult.user.getIdToken().then((idToken) => {
+              return fetch("{{ url_for('auth.handle_firebase_auth') }}", {
                 method: "POST",
                 headers: {
                   "Content-Type": "application/json",
+                  "X-CSRF-Token": "{{ form.csrf_token._value() }}",
                 },
                 body: JSON.stringify({ idToken: idToken }),
               }).then((response) => {
                 if (response.ok) {
-                  window.location.href = '{{ url_for("main.home") }}';
+                  window.location.href = "{{ url_for('main.home') }}";
+                } else {
+                  throw new Error("Backend authentication failed");
                 }
               });
             });
-            // Return false to prevent FirebaseUI default redirect
             return false;
           },
         },
+        signInSuccessUrl: "{{ url_for('main.home') }}",
       });
     });
 </script>
-
 {% endblock %}

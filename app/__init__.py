@@ -5,6 +5,10 @@ from flask import Flask
 from app.config import Config
 from dotenv import load_dotenv
 from flask_login import LoginManager
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+from app.utils.date_formater import format_datetime_filter
+from app.utils.filesize_formater import format_filesize
 from app.models import db
 import pyrebase
 
@@ -14,11 +18,28 @@ login_manager = LoginManager()
 # Initialize Firebase Admin SDK (do this only once)
 firebase_admin_initialized = False
 
+# Initialize limiter globally
+limiter = Limiter(
+    key_func=get_remote_address,
+    default_limits=["200 per day", "50 per hour"],
+    storage_uri="memory://"
+)
+
 def create_app(config_class=Config):
     app = Flask(__name__)
     app.config.from_object(config_class)
     
-    # print("test")
+    # Initialize limiter with app
+    limiter.init_app(app)
+    
+    # Custom error handler for rate limiting
+    @app.errorhandler(429)
+    def ratelimit_handler(e):
+        return {"error": f"Rate limit exceeded. {e.description}"}, 429
+    
+    app.jinja_env.filters['format_filesize'] = format_filesize
+    app.jinja_env.filters['format_datetime'] = format_datetime_filter
+    
     # Initialize SQLAlchemy
     db.init_app(app)
     
@@ -57,8 +78,8 @@ def create_app(config_class=Config):
     from app.auth.routes import auth_bp
     app.register_blueprint(auth_bp)
     
-    from app.dashboard.routes import dashboard_bp
-    app.register_blueprint(dashboard_bp)
+    from app.user_profile.routes import user_profile_bp
+    app.register_blueprint(user_profile_bp)
     
     from app.main.routes import main_bp
     app.register_blueprint(main_bp)

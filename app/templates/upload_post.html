@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<main>
+  <div class="auth-form">
+    <h2>📝 Tạo Bài Viết Mới</h2>
+    <form action="{{ url_for('post.create_post') }}" method="post" enctype="multipart/form-data">
+      <!-- Flash Messages -->
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="flashes">
+            {% for category, message in messages %}
+              <div class="flash {{ category }}">{{ message }}</div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      <!-- Tiêu đề -->
+      <div class="form-group">
+        <label for="title">Tiêu đề *</label>
+        <input type="text" id="title" name="title" required placeholder="Nhập tiêu đề bài viết">
+      </div>
+
+      <!-- Nội dung -->
+      <div class="form-group">
+        <label for="content">Nội dung *</label>
+        <textarea id="content" name="content" rows="6" required placeholder="Viết nội dung bài viết ở đây..."></textarea>
+      </div>
+
+      <!-- Ảnh Thumbnail -->
+      <div class="form-group">
+        <label for="thumbnail">Ảnh đại diện (tuỳ chọn)</label>
+        <input type="file" id="thumbnail" name="thumbnail" accept="image/*">
+      </div>
+
+      <!-- Tệp đính kèm -->
+      <div class="form-group">
+        <label for="attachment">File đính kèm (.zip, .rar, tùy chọn)</label>
+        <input type="file" id="attachment" name="attachment" accept=".zip,.rar">
+      </div>
+
+      <!-- Mô tả -->
+      <div class="form-group">
+        <label for="description">Mô tả ngắn *</label>
+        <textarea id="description" name="description" rows="2" required placeholder="Tóm tắt ngắn gọn bài viết..."></textarea>
+      </div>
+
+      <!-- Thẻ -->
+      <div class="form-group">
+        <label for="tags">Thẻ (phân cách bằng dấu phẩy)</label>
+        <input type="text" id="tags" name="tags" placeholder="ví dụ: công nghệ, blog, giáo dục">
+      </div>
+
+      <!-- Submit -->
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary">📤 Đăng Bài</button>
+      </div>
+    </form>
+
+    <div class="auth-links">
+      <a href="{{ url_for('post.list_posts') }}">📚 Xem Danh Sách Bài Viết</a>
+    </div>
+  </div>
+</main>
+{% endblock %}

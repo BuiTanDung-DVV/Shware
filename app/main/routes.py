@@ -1,4 +1,4 @@
-from flask import render_template, flash, Blueprint, request  # Add request
+from flask import render_template, flash, Blueprint, request, url_for  # Add request
 from flask_login import current_user
 
 import firebase_admin
@@ -14,28 +14,73 @@ db = firestore.client()
 @main_bp.route('/')
 def home():
     try:
-        files = []
-        docs = db.collection('files').order_by('upload_date', direction=firestore.Query.DESCENDING).stream()
-        for doc in docs:
+        # Lấy 5 tệp mới nhất cho slider
+        latest_files_docs = db.collection('files') \
+            .order_by('upload_date', direction=firestore.Query.DESCENDING) \
+            .limit(5) \
+            .stream()
+        latest_files = []
+        for doc in latest_files_docs:
             data = doc.to_dict()
-            files.append({
+            latest_files.append({
+                'doc_id': doc.id,  # <-- Add this line
                 'title': data.get('title'),
-                'author': data.get('author'),
-                'email': data.get('email'),
-                'profile_pic': data.get('profile_pic'),
                 'description': data.get('description'),
-                'file_type': data.get('file_type'),
-                'file_size': data.get('file_size'),
-                'tags': ', '.join(data.get('tags', [])),
+                'download_url': data.get('download_url'),
                 'upload_date': data.get('upload_date'),
+                'thumbnail_url': data.get('thumbnail_url', 'https://via.placeholder.com/300'),
+                'file_size': data.get('file_size') 
+            })
+
+        # Lấy tất cả các tệp để phân loại
+        all_files_docs = db.collection('files').stream()
+        categorized_files = {}
+        for doc in all_files_docs:
+            data = doc.to_dict()
+            category = data.get('category', 'Uncategorized') # Giả sử có trường 'category'
+            if category not in categorized_files:
+                categorized_files[category] = []
+            categorized_files[category].append({
+                'title': data.get('title'),
+                'description': data.get('description'),
                 'download_url': data.get('download_url')
             })
-    except Exception as e:
-        flash(f'Lỗi khi tải danh sách tệp: {str(e)}', 'error')
+
+        # Lấy danh sách tệp đã phân trang (vẫn giữ logic phân trang của bạn)
+        page = request.args.get('page', 1, type=int)
+        per_page = 6
         files = []
+        paginated_docs = db.collection('files') \
+            .order_by('upload_date', direction=firestore.Query.DESCENDING) \
+            .offset((page - 1) * per_page) \
+            .limit(per_page) \
+            .stream()
+        for doc in paginated_docs:
+            data = doc.to_dict()
+            files.append({
+                'doc_id': doc.id,
+                'title': data.get('title'),
+                'description': data.get('description'),
+                'tags': ', '.join(data.get('tags', [])),
+                'download_url': data.get('download_url'),
+                'file_size': data.get('file_size'),
+                'thumbnail_url': data.get('thumbnail_url', url_for('static', filename='default_placeholder.png')),
+                'avg_rating': data.get('avg_rating', 0),
+                'total_reviews': data.get('total_reviews', 0)
+            })
+        total_files = list(db.collection('files').get())
+        total_pages = (len(total_files) + per_page - 1) // per_page
 
-    return render_template('home.html', files=files)
+        return render_template('home.html',
+                               latest_files=latest_files,
+                               categorized_files=categorized_files,
+                               files=files,
+                               page=page,
+                               total_pages=total_pages)
 
+    except Exception as e:
+        flash(f'Lỗi khi tải dữ liệu trang chủ: {str(e)}', 'error')
+        return render_template('home.html', latest_files=[], categorized_files={}, files=[], page=1, total_pages=1)
 @main_bp.route('/search')
 def search():
     query = request.args.get('q', '').strip()
@@ -57,7 +102,7 @@ def search():
 
             if title_match or desc_match or tags_match:
                 results.append({
-                    'id': doc.id,
+                    'doc_id': doc.id,
                     'title': data.get('title'),
                     'author': data.get('author'),
                     'email': data.get('email'),
@@ -67,7 +112,10 @@ def search():
                     'file_size': data.get('file_size'),
                     'tags': ', '.join(data.get('tags', [])),
                     'upload_date': data.get('upload_date'),
-                    'download_url': data.get('download_url')
+                    'download_url': data.get('download_url'),
+                    'thumbnail_url': data.get('thumbnail_url', url_for('static', filename='default_placeholder.png')),
+                    'avg_rating': data.get('avg_rating', 0),
+                    'total_reviews': data.get('total_reviews', 0)
                 })
 
         if not results:

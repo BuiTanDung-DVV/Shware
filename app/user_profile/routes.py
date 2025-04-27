@@ -2,14 +2,14 @@ from flask import render_template, session, redirect, url_for, flash, Blueprint,
 from firebase_admin import firestore, auth as firebase_auth
 from flask_login import login_required, current_user
 from ..auth.forms import ProfileUpdateForm
-from .. import db # Import the SQLAlchemy db instance from the app package
+from .. import db 
 from ..models.user import User
+from ..files_management.upload import upload_progress
 
-# Use the main app/templates folder by default
-dashboard_bp = Blueprint('dashboard', __name__)
-db_firestore = firestore.client() # Rename Firestore client to avoid name clash
+user_profile_bp = Blueprint('user_profile', __name__)
+db_firestore = firestore.client()
 
-@dashboard_bp.route('/profile', methods=['GET', 'POST'])
+@user_profile_bp.route('/profile', methods=['GET', 'POST'])
 @login_required
 def profile():
     form = ProfileUpdateForm()
@@ -36,7 +36,7 @@ def profile():
     if form.validate_on_submit():
         print('Form submitted and validated.')
         flash('Display name updated successfully01.', 'success00')
-        # --- Update Display Name Logic --- 
+
         display_name = form.display_name.data
         if display_name and display_name != (firebase_user.display_name or ''):
             try:
@@ -77,11 +77,10 @@ def profile():
             except Exception as e:
                  flash(f'An unexpected error occurred while updating password: {e}', 'danger')
         elif not has_password_provider and new_password:
-            # Optional: Inform OAuth users they can't set a password this way
             flash('Password cannot be changed for accounts logged in via Google or other providers.', 'info')
 
 
-        return redirect(url_for('dashboard.profile'))
+        return redirect(url_for('user_profile.profile'))
     elif request.method == 'POST': 
         print("Form validation failed.")
         print("Errors:", form.errors)
@@ -94,9 +93,29 @@ def profile():
     user_info = {
         'email': firebase_user.email,
         'name': firebase_user.display_name,
-        'avatar': firebase_user.photo_url or url_for('static', filename='default_avatar.jpg'),
+        'avatar': firebase_user.photo_url or url_for('static', filename='images/default_avatar.jpg'),
         'registration_date': registration_date
     }
 
-    # Pass the has_password_provider flag to the template
-    return render_template('profile.html', user_info=user_info, form=form, has_password_provider=has_password_provider)
+    # Fetch user uploads from Firestore
+    user_uploads = []
+    try:
+        uploads_query = db_firestore.collection('files').where('author_id', '==', user_id).order_by('upload_date', direction=firestore.Query.DESCENDING).stream()
+            
+        for doc in uploads_query:
+            file_data = doc.to_dict()
+            file_data['doc_id'] = doc.id
+            
+            # Add upload progress from cache if available
+            if file_data.get('upload_id') in upload_progress:
+                progress_data = upload_progress[file_data['upload_id']]
+                file_data['upload_progress'] = progress_data.get('progress', 0)
+                
+            user_uploads.append(file_data)
+    except Exception as e:
+        flash(f"Error fetching user uploads: {e}", "danger")
+
+    # Pass the user uploads to the template
+    return render_template('profile.html', user_info=user_info, form=form, 
+                         has_password_provider=has_password_provider, 
+                         user_uploads=user_uploads)

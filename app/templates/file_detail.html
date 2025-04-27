@@ -1,0 +1,244 @@
+{% extends 'base.html' %} {% block title %}{{ file.title }} | Shware{% endblock
+%} {% block head %} {{ super() }}
+<!-- Add Font Awesome for star icons -->
+<link
+  rel="stylesheet"
+  href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+/>
+<style>
+  .star-container {
+    display: inline-flex;
+    gap: 5px;
+    margin-bottom: 10px;
+  }
+  .star {
+    font-size: 1.8rem;
+    color: #ccc;
+    cursor: pointer;
+    transition: color 0.2s;
+    touch-action: manipulation;
+  }
+  .star.selected {
+    color: #ffc107;
+  }
+
+  .review-box {
+    margin-top: 1.5rem;
+    border-top: 1px solid #e0e0e0;
+    padding-top: 1.5rem;
+  }
+
+  .review-form {
+    margin-top: 1rem;
+  }
+
+  .review-button {
+    margin-top: 0.5rem;
+  }
+
+  .average-rating-text {
+    font-size: 0.9rem;
+    color: #6c757d;
+    margin-left: 10px;
+  }
+</style>
+{% endblock %} {% block content %}
+<div class="file-detail-container container mt-5">
+  <h2 class="text-center mb-4">{{ file.title }}</h2>
+
+  <!-- Image Section -->
+  <div class="file-image-section mb-4">
+    <img
+      src="{{ file.thumbnail_url or url_for('static', filename='images/default_avatar.jpg') }}"
+      alt="{{ file.title }} Image"
+      class="file-detail-image"
+    />
+  </div>
+
+  <!-- Features Box -->
+  <div class="file-features-box card mb-4">
+    <div class="card-body">
+      <h4 class="card-title">📄 Chi tiết tệp</h4>
+      <p><strong>👤 Tác giả:</strong> {{ file.author }}</p>
+      <p>
+        <strong>🏷️ Tags:</strong>
+        {% if file.tags %} {% for tag in file.tags %} {% if tag.strip() %}
+        <span class="badge bg-light text-dark">{{ tag.strip() }}</span>
+        {% endif %} {% endfor %} {% else %} Không có thẻ {% endif %}
+      </p>
+      <p>
+        <strong>💾 Kích thước:</strong> {{ file.file_size | format_filesize}}
+      </p>
+      <p>
+        <strong>📅 Ngày tải lên:</strong> {{ file.upload_date.strftime('%Y-%m-%d
+        %H:%M') if file.upload_date else 'N/A' }}
+      </p>
+      <p>
+        <strong>⭐ Đánh giá:</strong>
+        <span class="static-stars">
+          {% for i in range(file.avg_rating|int) %}
+          <i class="fas fa-star"></i>
+          {% endfor %} {% if (file.avg_rating or 0)|round(1) % 1 >= 0.5 %}
+          <i class="fas fa-star-half-alt"></i>
+          {% for i in range(4 - file.avg_rating|int) %}
+          <i class="far fa-star empty-star"></i>
+          {% endfor %} {% else %} {% for i in range(5 - file.avg_rating|int) %}
+          <i class="far fa-star empty-star"></i>
+          {% endfor %} {% endif %}
+        </span>
+        <span
+          >({{ file.avg_rating|round(1) }} / 5.0 - {{ file.total_reviews or 0 }}
+          đánh giá)</span
+        >
+      </p>
+    </div>
+  </div>
+
+  <!-- Description Section -->
+  <div class="file-description card mb-4">
+    <div class="card-body">
+      <h4 class="card-title">📝 Mô tả chi tiết</h4>
+      <p>{{ file.description | safe }}</p>
+      {# Use safe filter if description contains HTML #}
+    </div>
+  </div>
+
+  <!-- Review Section -->
+  <div class="review-section card mb-4">
+    <div class="card-body">
+      {% if current_user.is_authenticated %}
+      <div class="review-box">
+        <form
+          class="review-form"
+          action="{{ url_for('files.submit_review', doc_id=file.doc_id) }}"
+          method="POST"
+          id="review-form"
+        >
+          <div class="form-group">
+            <label>⭐ Đánh giá của bạn:</label>
+            <div class="star-container">
+              <i class="fas fa-star star" data-index="1"></i>
+              <i class="fas fa-star star" data-index="2"></i>
+              <i class="fas fa-star star" data-index="3"></i>
+              <i class="fas fa-star star" data-index="4"></i>
+              <i class="fas fa-star star" data-index="5"></i>
+            </div>
+            <input
+              type="hidden"
+              name="rating"
+              id="rating-value"
+              value="{{ user_review.rating if user_review else 0 }}"
+            />
+          </div>
+          <button type="submit" class="btn btn-primary review-button">
+            {{ 'Cập nhật đánh giá' if user_review else 'Gửi đánh giá' }}
+          </button>
+        </form>
+      </div>
+      {% else %}
+      <div class="alert alert-info">
+        <p>
+          Vui lòng
+          <a href="{{ url_for('auth.login', next=request.url) }}">đăng nhập</a>
+          để đánh giá tệp này.
+        </p>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Download Section -->
+  <div class="download-section card mb-4">
+    <div class="card-body text-center">
+      <h4 class="card-title">📥 Tải xuống</h4>
+      {% if current_user.is_authenticated %} {% if file.download_url %}
+      <a
+        href="{{ file.download_url }}"
+        class="btn btn-primary btn-lg"
+        target="_blank"
+        >⬇️ Tải xuống ngay</a
+      >
+      {% else %}
+      <p class="text-muted">Liên kết tải xuống không khả dụng.</p>
+      {% endif %} {% else %}
+      <p>
+        <a
+          href="{{ url_for('auth.login', next=request.url) }}"
+          class="btn btn-secondary"
+          >🔒 Đăng nhập để tải xuống</a
+        >
+      </p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const starContainer = document.querySelector(".star-container");
+    const ratingInput = document.getElementById("rating-value");
+    const stars = starContainer ? starContainer.querySelectorAll(".star") : [];
+
+    if (!starContainer || !ratingInput || stars.length === 0) {
+      console.error("Star rating elements not found.");
+      return; // Exit if elements are missing
+    }
+
+    const initialRating = parseInt(ratingInput.value || 0);
+
+    function setStars(selectedIndex) {
+      stars.forEach((star) => {
+        const index = parseInt(star.getAttribute("data-index"));
+        star.classList.toggle("selected", index <= selectedIndex);
+      });
+    }
+
+    function handleStarInteraction(event) {
+      // Ensure the event target is a star icon within the container
+      if (!event.target.matches(".star-container .star")) {
+        return;
+      }
+
+      event.preventDefault(); // Prevent default click/touch actions
+      const selectedIndex = parseInt(event.target.getAttribute("data-index"));
+
+      setStars(selectedIndex);
+      ratingInput.value = selectedIndex;
+    }
+
+    // Set initial state
+    if (initialRating > 0) {
+      setStars(initialRating);
+    }
+
+    // Add event listeners
+    starContainer.addEventListener("click", handleStarInteraction);
+    // Using touchend is often more reliable for tap actions than touchstart
+    starContainer.addEventListener("touchend", handleStarInteraction);
+
+    // Optional: Add mouseover/mouseout for hover effect (visual only, doesn't set rating)
+    starContainer.addEventListener("mouseover", (event) => {
+      if (event.target.matches(".star-container .star")) {
+        const hoverIndex = parseInt(event.target.getAttribute("data-index"));
+        stars.forEach((star) => {
+          const index = parseInt(star.getAttribute("data-index"));
+          // Temporarily color stars up to the hovered one, but don't remove 'selected'
+          if (index <= hoverIndex) {
+            star.style.color = "#ffc107";
+          }
+        });
+      }
+    });
+
+    starContainer.addEventListener("mouseout", (event) => {
+      // Reset inline style potentially added by mouseover FIRST
+      stars.forEach((star) => (star.style.color = ""));
+
+      // THEN re-apply colors based on the actual selected rating using classes
+      const currentRating = parseInt(ratingInput.value || 0);
+      setStars(currentRating);
+    });
+  });
+</script>
+
+{% endblock %}

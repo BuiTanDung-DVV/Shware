@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<main>
+    <div class="auth-form">
+        <h2>📝 Chỉnh sửa Bài Viết</h2>
+
+        <form action="{{ url_for('post.edit_post', doc_id=post_id) }}" method="post" enctype="multipart/form-data">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+              {% if messages %}
+                <div class="flashes">
+                  {% for category, message in messages %}
+                    <div class="flash {{ category }}">{{ message }}</div>
+                  {% endfor %}
+                </div>
+              {% endif %}
+            {% endwith %}
+
+            <!-- Title -->
+            <div class="form-group">
+                <label for="title">Tiêu đề *</label>
+                <input type="text" id="title" name="title" value="{{ post.title }}" required>
+            </div>
+
+            <!-- Description -->
+            <div class="form-group">
+                <label for="description">Mô tả *</label>
+                <textarea id="description" name="description" rows="2" required>{{ post.description }}</textarea>
+            </div>
+
+            <!-- Content -->
+            <div class="form-group">
+                <label for="content">Nội dung bài viết *</label>
+                <textarea id="content" name="content" rows="5" required>{{ post.content }}</textarea>
+            </div>
+
+            <!-- Image -->
+            <div class="form-group">
+                <label>Ảnh hiện tại:</label><br>
+                <img src="{{ post.image_url }}" alt="Ảnh bài viết" style="max-width: 300px; border-radius: 8px;">
+            </div>
+
+            <div class="form-group">
+                <label for="image">Cập nhật ảnh mới (tuỳ chọn)</label>
+                <input type="file" id="image" name="image" accept="image/*">
+            </div>
+
+            <!-- Existing File -->
+            {% if post.download_url %}
+            <div class="form-group">
+                <label>Tệp đính kèm:</label><br>
+                <a href="{{ post.download_url }}" target="_blank">📦 Tải tệp xuống</a>
+            </div>
+            {% endif %}
+
+            <!-- Tags -->
+            <div class="form-group">
+                <label for="tags">Thẻ (cách nhau bằng dấu phẩy)</label>
+                <input type="text" id="tags" name="tags" value="{{ post.tags|join(', ') }}">
+            </div>
+
+            <!-- Submit -->
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">💾 Cập nhật Bài Viết</button>
+                <a href="{{ url_for('post.list_posts') }}" class="btn">↩ Quay lại</a>
+            </div>
+        </form>
+    </div>
+</main>
+{% endblock %}

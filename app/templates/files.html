@@ -1,63 +1,292 @@
 {% extends 'base.html' %}
-
 {% block content %}
 <main>
-    <div class="file-table">
-        <h2>📁 Danh sách File</h2>
+  <div class="file-table">
+    <h2>📁 Danh sách File</h2>
 
-        <!-- Flash messages -->
-        {% with messages = get_flashed_messages(with_categories=true) %}
-          {% if messages %}
-            <div class="flashes">
-              {% for category, message in messages %}
-                <div class="flash {{ category }}">{{ message }}</div>
-              {% endfor %}
-            </div>
+    <!-- Filter and Sort Controls -->
+    <div class="filter-sort-controls">
+      <div class="sort-options">
+        <form method="get" action="{{ url_for('files.list_files') }}" class="sort-form">
+          <input type="hidden" name="page" value="1">
+          {% if current_tag %}
+          <input type="hidden" name="tag" value="{{ current_tag }}">
           {% endif %}
-        {% endwith %}
+          {% if current_file_type %}
+          <input type="hidden" name="file_type" value="{{ current_file_type }}">
+          {% endif %}
 
-        {% if files %}
-        <div class="table-container">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Tiêu đề</th>
-                        <th>Tác giả</th>
-                        <th>Mô tả</th>
-                        <th>Loại file</th>
-                        <th>Kích thước</th>
-                        <th>Tags</th>
-                        <th>Ngày tải lên</th>
-                        <th>Hành động</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for file in files %}
-                    <tr>
-                        <td><a href="{{ file.download_url }}" target="_blank">{{ file.title }}</a></td>
-                        <td>{{ file.author }}</td>
-                        <td>{{ file.description }}</td>
-                        <td>{{ file.file_type }}</td>
-                        <td>{{ file.file_size }} KB</td>
-                        <td>{{ file.tags }}</td>
-                        <td>{{ file.upload_date }}</td>
-                        <td>
-                            <form action="{{ url_for('files.delete_file', doc_id=file.id) }}" method="post" onsubmit="return confirm('Bạn có chắc chắn muốn xóa file này không?');">
-                                <button type="submit" class="btn btn-danger">🗑️ Xóa</button>
-                            </form>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+          <div class="form-group">
+            <label for="sort_by">Sắp xếp theo:</label>
+            <select name="sort_by" id="sort_by" onchange="this.form.submit()">
+              <option value="upload_date" {% if sort_by == 'upload_date' %}selected{% endif %}>Ngày tải lên</option>
+              <option value="title" {% if sort_by == 'title' %}selected{% endif %}>Tiêu đề (A-Z)</option>
+              <option value="author" {% if sort_by == 'author' %}selected{% endif %}>Tác giả</option>
+              <option value="file_size" {% if sort_by == 'file_size' %}selected{% endif %}>Kích thước</option>
+              <option value="file_type" {% if sort_by == 'file_type' %}selected{% endif %}>Loại file</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="sort_direction">Thứ tự:</label>
+            <select name="sort_direction" id="sort_direction" onchange="this.form.submit()">
+              <option value="asc" {% if sort_direction == 'asc' %}selected{% endif %}>Tăng dần</option>
+              <option value="desc" {% if sort_direction == 'desc' %}selected{% endif %}>Giảm dần</option>
+            </select>
+          </div>
+        </form>
+      </div>
+
+      <div class="filter-options">
+        <div class="file-type-filter">
+          <form method="get" action="{{ url_for('files.list_files') }}" class="filter-form">
+            <input type="hidden" name="page" value="1">
+            <input type="hidden" name="sort_by" value="{{ sort_by }}">
+            <input type="hidden" name="sort_direction" value="{{ sort_direction }}">
+            {% if current_tag %}
+            <input type="hidden" name="tag" value="{{ current_tag }}">
+            {% endif %}
+
+            <div class="form-group">
+              <label for="file_type">Loại file:</label>
+              <select name="file_type" id="file_type" onchange="this.form.submit()">
+                <option value="">Tất cả</option>
+                {% for file_type in all_file_types %}
+                  <option value="{{ file_type }}" {% if current_file_type == file_type %}selected{% endif %}>{{ file_type }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </form>
         </div>
-        {% else %}
-        <div class="flash warning">📂 Chưa có tệp nào được tải lên.</div>
+
+        <div class="tag-filter">
+          <form method="get" action="{{ url_for('files.list_files') }}" class="filter-form">
+            <input type="hidden" name="page" value="1">
+            <input type="hidden" name="sort_by" value="{{ sort_by }}">
+            <input type="hidden" name="sort_direction" value="{{ sort_direction }}">
+            {% if current_file_type %}
+            <input type="hidden" name="file_type" value="{{ current_file_type }}">
+            {% endif %}
+
+            <div class="form-group">
+              <label for="tag">Tag:</label>
+              <select name="tag" id="tag" onchange="this.form.submit()">
+                <option value="">Tất cả</option>
+                {% for tag in all_tags %}
+                  <option value="{{ tag }}" {% if current_tag == tag %}selected{% endif %}>{{ tag }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      {% if current_tag or current_file_type %}
+      <div class="active-filters">
+        <span>Bộ lọc đang áp dụng:</span>
+        {% if current_tag %}
+        <span class="filter-tag">
+          Tag: {{ current_tag }}
+          <a href="{{ url_for('files.list_files', sort_by=sort_by, sort_direction=sort_direction, file_type=current_file_type) }}" class="remove-filter">✕</a>
+        </span>
         {% endif %}
 
-        <div class="auth-links">
-            <a href="{{ url_for('upload.upload_file') }}">⬅️ Quay lại Trang Tải lên</a>
-        </div>
+        {% if current_file_type %}
+        <span class="filter-tag">
+          Loại file: {{ current_file_type }}
+          <a href="{{ url_for('files.list_files', sort_by=sort_by, sort_direction=sort_direction, tag=current_tag) }}" class="remove-filter">✕</a>
+        </span>
+        {% endif %}
+
+        <a href="{{ url_for('files.list_files') }}" class="clear-all-filters">Xóa tất cả bộ lọc</a>
+      </div>
+      {% endif %}
     </div>
+
+    {% if files %}
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>
+                      <a href="{{ url_for('files.list_files', sort_by='title', sort_direction='asc' if sort_by == 'title' and sort_direction == 'desc' else 'desc', tag=current_tag, file_type=current_file_type, page=page) }}" class="sort-header">
+                        Tiêu đề
+                        {% if sort_by == 'title' %}
+                          {% if sort_direction == 'asc' %}▲{% else %}▼{% endif %}
+                        {% endif %}
+                      </a>
+                    </th>
+                    <th>
+                      <a href="{{ url_for('files.list_files', sort_by='author', sort_direction='asc' if sort_by == 'author' and sort_direction == 'desc' else 'desc', tag=current_tag, file_type=current_file_type, page=page) }}" class="sort-header">
+                        Tác giả
+                        {% if sort_by == 'author' %}
+                          {% if sort_direction == 'asc' %}▲{% else %}▼{% endif %}
+                        {% endif %}
+                      </a>
+                    </th>
+                    <th>Mô tả</th>
+                    <th>
+                      <a href="{{ url_for('files.list_files', sort_by='file_type', sort_direction='asc' if sort_by == 'file_type' and sort_direction == 'desc' else 'desc', tag=current_tag, file_type=current_file_type, page=page) }}" class="sort-header">
+                        Loại file
+                        {% if sort_by == 'file_type' %}
+                          {% if sort_direction == 'asc' %}▲{% else %}▼{% endif %}
+                        {% endif %}
+                      </a>
+                    </th>
+                    <th>
+                      <a href="{{ url_for('files.list_files', sort_by='file_size', sort_direction='asc' if sort_by == 'file_size' and sort_direction == 'desc' else 'desc', tag=current_tag, file_type=current_file_type, page=page) }}" class="sort-header">
+                        Kích thước
+                        {% if sort_by == 'file_size' %}
+                          {% if sort_direction == 'asc' %}▲{% else %}▼{% endif %}
+                        {% endif %}
+                      </a>
+                    </th>
+                    <th>Tags</th>
+                    <th>
+                      <a href="{{ url_for('files.list_files', sort_by='upload_date', sort_direction='asc' if sort_by == 'upload_date' and sort_direction == 'desc' else 'desc', tag=current_tag, file_type=current_file_type, page=page) }}" class="sort-header">
+                        Ngày tải lên
+                        {% if sort_by == 'upload_date' %}
+                          {% if sort_direction == 'asc' %}▲{% else %}▼{% endif %}
+                        {% endif %}
+                      </a>
+                    </th>
+                    <th>Hành động</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for file in files %}
+                <tr>
+                    <td><a href="{{ url_for('files.file_detail', doc_id=file.doc_id) }}">{{ file.title }}</a></td>
+                    <td>{{ file.author }}</td>
+                    <td>{{ file.description }}</td>
+                    <td>{{ file.file_type }}</td>
+                    <td>{{ file.file_size }} KB</td>
+                    <td>
+                      {% for tag in file.tags %}
+                        <a href="{{ url_for('files.list_files', tag=tag, sort_by=sort_by, sort_direction=sort_direction, file_type=current_file_type) }}" class="tag-link">{{ tag }}</a>{% if not loop.last %}, {% endif %}
+                      {% endfor %}
+                    </td>
+                    <td>{{ file.upload_date }}</td>
+                    <td>
+                        <a href="{{ file.download_url }}" class="btn btn-success" target="_blank">⬇️ Tải xuống</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination Controls -->
+    <div class="pagination">
+      {% if page > 1 %}
+      <a href="{{ url_for('files.list_files', page=page - 1, sort_by=sort_by, sort_direction=sort_direction, tag=current_tag, file_type=current_file_type) }}"
+        >⬅️ Trang trước</a
+      >
+      {% endif %}
+
+      <span>Trang {{ page }} trên {{ total_pages }}</span>
+
+      {% if page < total_pages %}
+      <a href="{{ url_for('files.list_files', page=page + 1, sort_by=sort_by, sort_direction=sort_direction, tag=current_tag, file_type=current_file_type) }}"
+        >Trang tiếp ➡️</a
+      >
+      {% endif %}
+    </div>
+    {% else %}
+    <div class="flash warning">
+      {% if current_tag or current_file_type %}
+        📂 Không tìm thấy tệp nào phù hợp với bộ lọc hiện tại.
+      {% else %}
+        📂 Chưa có tệp nào được tải lên.
+      {% endif %}
+    </div>
+    {% endif %}
+
+    <div class="auth-links">
+      <a href="{{ url_for('upload.upload_file') }}"
+        >⬆️ Tải lên tệp mới</a
+      >
+      <a href="{{ url_for('main.home') }}"
+        >🏠 Quay lại Trang chủ</a
+      >
+    </div>
+  </div>
 </main>
+
+<style>
+  .filter-sort-controls {
+    border: 1px dashed var(--border-color);
+    padding: 15px;
+    margin-bottom: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  }
+
+  .filter-sort-controls .form-group {
+    margin-bottom: 10px;
+    display: inline-block;
+    margin-right: 15px;
+  }
+
+  .filter-sort-controls label {
+    margin-right: 5px;
+    font-weight: bold;
+  }
+
+  .filter-sort-controls select {
+    padding: 5px 10px;
+    border-radius: 4px;
+    border: 1px solid #ddd;
+  }
+
+  .active-filters {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid #eee;
+  }
+
+  .filter-tag {
+    display: inline-block;
+    background-color: #e7f3ff;
+    padding: 3px 8px;
+    border-radius: 4px;
+    margin: 0 5px;
+  }
+
+  .remove-filter {
+    color: #dc3545;
+    margin-left: 5px;
+    text-decoration: none;
+  }
+
+  .clear-all-filters {
+    margin-left: 10px;
+    color: #6c757d;
+  }
+
+  .tag-link {
+    color: #0366d6;
+    text-decoration: none;
+  }
+
+  .tag-link:hover {
+    text-decoration: underline;
+  }
+
+  .sort-header {
+    color: #333;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .sort-header:hover {
+    color: #0366d6;
+  }
+
+  .sort-form, .filter-form {
+    display: inline-block;
+  }
+</style>
 {% endblock %}
