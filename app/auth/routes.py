@@ -9,7 +9,7 @@ from app.auth.forms import LoginForm, RegistrationForm
 from app.models.user import User, db
 from app.config import Config
 from datetime import datetime
-from app import limiter
+# from app import limiter
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -104,7 +104,7 @@ def sync_user_to_local_and_firestore(uid, email, display_name, profile_pic_url, 
     return user
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
-@limiter.limit("5 per minute")
+# @limiter.limit("5 per minute")
 def login():
     if current_user.is_authenticated:
         return redirect(url_for('main.home'))
@@ -149,7 +149,7 @@ def handle_firebase_auth():
         return json.jsonify({'error': 'Authentication failed.'}), 400
 
 @auth_bp.route('/register', methods=['GET', 'POST'])
-@limiter.limit("3 per minute")
+# @limiter.limit("3 per minute")
 def register():
     if current_user.is_authenticated:
         return redirect(url_for('main.home'))

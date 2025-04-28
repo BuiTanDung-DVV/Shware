@@ -793,7 +793,7 @@ body.dark-theme .profile-update-form .text-muted {
 
 /* File Detail Page Styles */
 .file-detail-container {
-  max-width: 900px;
+  max-width: 90%;
 }
 
 .file-image-section {
@@ -814,16 +814,19 @@ body.dark-theme .profile-update-form .text-muted {
 
 .file-features-box,
 .file-description,
+.review-section,
 .download-section {
   margin: 20px 0;
+  color: var(--text-color);
   background-color: var(--card-bg);
   border: 1px solid var(--border-color);
   border-radius: 8px;
-  padding: 1.5rem; /* Consistent padding */
+  padding: 1.5rem;
 }
 
 .file-features-box h4,
 .file-description h4,
+.review-box h4,
 .download-section h4 {
   margin-bottom: 1rem;
   color: var(--primary-color);
@@ -834,10 +837,15 @@ body.dark-theme .profile-update-form .text-muted {
 }
 
 .file-features-box .badge {
-  margin-right: 5px;
-  font-size: 0.85em;
+  padding: 0.4rem 0.8rem;
+  border-radius: 1%;
+  font-size: 0.85rem;
+  background-color: var(--card-bg);
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
 }
 
+.review-section .re,
 .download-section .btn-lg {
   padding: 0.75rem 2rem;
   font-size: 1.1rem;

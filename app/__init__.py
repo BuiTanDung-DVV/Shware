@@ -21,11 +21,12 @@ csrf = CSRFProtect()  # Initialize CSRF protection
 firebase_admin_initialized = False
 
 # Initialize limiter globally
-limiter = Limiter(
-    key_func=get_remote_address,
-    default_limits=["200 per day", "50 per hour"],
-    storage_uri="memory://"
-)
+#TODO: Uncomment and configure the limiter as needed
+# limiter = Limiter(
+#     key_func=get_remote_address,
+#     default_limits=["200 per day", "50 per hour"],
+#     storage_uri="memory://"
+# )
 
 def create_app(config_class=Config):
     app = Flask(__name__)
@@ -35,12 +36,12 @@ def create_app(config_class=Config):
     csrf.init_app(app)
     
     # Initialize limiter with app
-    limiter.init_app(app)
+    # limiter.init_app(app)
     
     # Custom error handler for rate limiting
-    @app.errorhandler(429)
-    def ratelimit_handler(e):
-        return {"error": f"Rate limit exceeded. {e.description}"}, 429
+    # @app.errorhandler(429)
+    # def ratelimit_handler(e):
+    #     return {"error": f"Rate limit exceeded. {e.description}"}, 429
     
     
     app.jinja_env.filters['format_filesize'] = format_filesize

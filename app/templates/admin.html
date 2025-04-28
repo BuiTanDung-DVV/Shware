@@ -1,12 +1,26 @@
 {% extends "base.html" %} {% block title %}Admin Dashboard{% endblock %} {%
 block content %}
+<style>
+  .card {
+    background-color: var(--card-bg);
+    border-radius: 0.5rem;
+  }
+  .card-header {
+    background-color: var(--border-color);
+    color: var(--text-color);
+  }
+</style>
+
 <div class="container mt-1">
   <h2 class="mb-4">Admin Dashboard</h2>
 
   <!-- Quick Actions -->
   <div class="row mb-4">
     <div class="col-md-12">
-      <div class="card">
+      <div
+        class="card"
+        style="background-color: var(--border-color); border-width: 0"
+      >
         <div class="card-header">Quick Actions</div>
         <div class="card-body">
           <div class="d-flex gap-2">
@@ -16,7 +30,7 @@ block content %}
             >
               <i class="fas fa-users"></i> Manage Users
             </a>
-            <a href="{{ url_for('files.list_files') }}" class="btn btn-info">
+            <a href="{{ url_for('admin.manage_files') }}" class="btn btn-info">
               <i class="fas fa-file"></i> Manage Files
             </a>
           </div>
@@ -56,17 +70,17 @@ block content %}
   <!-- Charts Row -->
   <div class="row">
     <div class="col-md-6">
-      <div class="card">
+      <div class="card" style="border-width: 0">
         <div class="card-header">User Registration Trend</div>
-        <div class="card-body">
+        <div class="card-body" style="background-color: var(--card-bg)">
           <canvas id="userTrendChart"></canvas>
         </div>
       </div>
     </div>
     <div class="col-md-6">
-      <div class="card">
-        <div class="card-header">Activity Distribution</div>
-        <div class="card-body">
+      <div class="card" style="border-width: 0">
+        <div class="card-header">Tag Usage Distribution</div>
+        <div class="card-body" style="background-color: var(--card-bg)">
           <canvas id="activityChart"></canvas>
         </div>
       </div>
@@ -79,94 +93,162 @@ block content %}
   document.addEventListener("DOMContentLoaded", function () {
     // Fetch statistics
     fetch("{{ url_for('admin.get_stats') }}")
-      .then((response) => response.json())
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Network response was not ok");
+        }
+        return response.json();
+      })
       .then((data) => {
-        // Update statistics cards
-        document.getElementById("totalUsers").textContent = data.total_users;
-        document.getElementById("activeUsers").textContent = data.active_users;
-        document.getElementById("totalFiles").textContent = data.total_files;
-        //document.getElementById("totalPosts").textContent = data.total_posts;
+        // Update statistics cards with proper error handling
+        const totalUsers = document.getElementById("totalUsers");
+        const activeUsers = document.getElementById("activeUsers");
+        const totalFiles = document.getElementById("totalFiles");
 
-        // User Registration Trend Chart
-        const userTrendCtx = document
-          .getElementById("userTrendChart")
-          .getContext("2d");
-        new Chart(userTrendCtx, {
-          type: "line",
-          data: {
-            labels: data.registration_trend.labels,
-            datasets: [
-              {
-                label: "New Users",
-                data: data.registration_trend.data,
-                borderColor: "rgb(75, 192, 192)",
-                tension: 0.1,
-                fill: true,
-                backgroundColor: "rgba(75, 192, 192, 0.2)",
-              },
-            ],
-          },
-          options: {
-            responsive: true,
-            plugins: {
-              title: {
-                display: true,
-                text: "Monthly User Registrations",
-              },
-              legend: {
-                position: "bottom",
-              },
-            },
-            scales: {
-              y: {
-                beginAtZero: true,
-                ticks: {
-                  stepSize: 1,
-                },
-              },
-            },
-          },
-        });
+        if (totalUsers) totalUsers.textContent = data.total_users || "0";
+        if (activeUsers) activeUsers.textContent = data.active_users || "0";
+        if (totalFiles) totalFiles.textContent = data.total_files || "0";
 
-        // Activity Distribution Chart
-        const activityCtx = document
-          .getElementById("activityChart")
-          .getContext("2d");
-        new Chart(activityCtx, {
-          type: "doughnut",
-          data: {
-            labels: data.activity_distribution.labels,
-            datasets: [
-              {
-                data: data.activity_distribution.data,
-                backgroundColor: [
-                  "rgb(54, 162, 235)",
-                  "rgb(255, 205, 86)",
-                  "rgb(255, 99, 132)",
+        // Biểu đồ đăng ký người dùng
+        if (data.registration_trend && data.registration_trend.labels) {
+          const userTrendCtx = document.getElementById("userTrendChart");
+          if (userTrendCtx) {
+            new Chart(userTrendCtx.getContext("2d"), {
+              type: "line",
+              data: {
+                labels: data.registration_trend.labels,
+                datasets: [
+                  {
+                    label: "New Users",
+                    data: data.registration_trend.data,
+                    borderColor: "rgb(75, 192, 192)",
+                    tension: 0.1,
+                    fill: true,
+                    backgroundColor: "rgba(75, 192, 192, 0.2)",
+                  },
                 ],
               },
-            ],
-          },
-          options: {
-            responsive: true,
-            plugins: {
-              title: {
-                display: true,
-                text: "Content Distribution",
+              options: {
+                responsive: true,
+                plugins: {
+                  title: {
+                    display: true,
+                    text: "Monthly User Registrations",
+                  },
+                  legend: {
+                    position: "bottom",
+                  },
+                },
+                scales: {
+                  y: {
+                    beginAtZero: true,
+                    ticks: {
+                      stepSize: 1,
+                    },
+                  },
+                },
+                elements: {
+                  point: {
+                    radius: 5,
+                    hoverRadius: 7,
+                  },
+                },
+                animation: {
+                  duration: 1000,
+                  easing: "easeInOutQuad",
+                },
+                layout: {
+                  padding: {
+                    top: 20,
+                    bottom: 20,
+                  },
+                },
+                interaction: {
+                  mode: "nearest",
+                  axis: "x",
+                  intersect: false,
+                },
+                hover: {
+                  mode: "nearest",
+                  axis: "x",
+                  intersect: true,
+                },
+                onHover: function (event, chartElement) {
+                  if (chartElement.length) {
+                    event.native.target.style.cursor = "pointer";
+                  } else {
+                    event.native.target.style.cursor = "default";
+                  }
+                },
               },
-              legend: {
-                position: "bottom",
+            });
+          }
+        }
+
+        // Biểu đồ phân bố tags
+        if (data.activity_distribution && data.activity_distribution.labels) {
+          const activityCtx = document.getElementById("activityChart");
+          if (activityCtx) {
+            new Chart(activityCtx.getContext("2d"), {
+              type: "doughnut",
+              data: {
+                labels: data.activity_distribution.labels,
+                datasets: [
+                  {
+                    label: "Reference",
+                    data: data.activity_distribution.data,
+                    backgroundColor: data.activity_distribution.backgroundColor,
+                    borderWidth: 1,
+                    hoverOffset: 40,
+                  },
+                ],
               },
-            },
-          },
-        });
+              options: {
+                responsive: true,
+                plugins: {
+                  title: {
+                    display: true,
+                    text: "Content Distribution",
+                    font: {
+                      size: 16,
+                    },
+                  },
+                  legend: {
+                    display: false,
+                  },
+                },
+                elements: {
+                  arc: {
+                    borderWidth: 0,
+                  },
+                },
+                cutout: "60%",
+                animation: {
+                  animateScale: true,
+                  animateRotate: true,
+                },
+                layout: {
+                  padding: {
+                    top: 20,
+                    bottom: 20,
+                  },
+                },
+              },
+            });
+          }
+        }
       })
       .catch((error) => {
         console.error("Error fetching stats:", error);
         const errorDiv = document.createElement("div");
-        errorDiv.className = "alert alert-danger";
+        errorDiv.className = "alert alert-danger mt-3";
         errorDiv.textContent = "Error loading dashboard statistics";
-        //document.querySelector(".container").prepend(errorDiv);
+        document
+          .querySelector(".container")
+          .insertBefore(
+            errorDiv,
+            document.querySelector(".container").firstChild
+          );
       });
   });
 </script>

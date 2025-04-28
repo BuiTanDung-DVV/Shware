@@ -1,50 +1,13 @@
 {% extends 'base.html' %} {% block title %}{{ file.title }} | Shware{% endblock
-%} {% block head %} {{ super() }}
+%} {% block head %}
 <!-- Add Font Awesome for star icons -->
 <link
   rel="stylesheet"
   href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
 />
-<style>
-  .star-container {
-    display: inline-flex;
-    gap: 5px;
-    margin-bottom: 10px;
-  }
-  .star {
-    font-size: 1.8rem;
-    color: #ccc;
-    cursor: pointer;
-    transition: color 0.2s;
-    touch-action: manipulation;
-  }
-  .star.selected {
-    color: #ffc107;
-  }
-
-  .review-box {
-    margin-top: 1.5rem;
-    border-top: 1px solid #e0e0e0;
-    padding-top: 1.5rem;
-  }
-
-  .review-form {
-    margin-top: 1rem;
-  }
-
-  .review-button {
-    margin-top: 0.5rem;
-  }
-
-  .average-rating-text {
-    font-size: 0.9rem;
-    color: #6c757d;
-    margin-left: 10px;
-  }
-</style>
 {% endblock %} {% block content %}
 <div class="file-detail-container container mt-5">
-  <h2 class="text-center mb-4">{{ file.title }}</h2>
+  <h2 class="text mb-4">{{ file.title }}</h2>
 
   <!-- Image Section -->
   <div class="file-image-section mb-4">
@@ -63,7 +26,7 @@
       <p>
         <strong>🏷️ Tags:</strong>
         {% if file.tags %} {% for tag in file.tags %} {% if tag.strip() %}
-        <span class="badge bg-light text-dark">{{ tag.strip() }}</span>
+        <span class="badge">{{ tag.strip() }}</span>
         {% endif %} {% endfor %} {% else %} Không có thẻ {% endif %}
       </p>
       <p>
@@ -98,7 +61,7 @@
   <div class="file-description card mb-4">
     <div class="card-body">
       <h4 class="card-title">📝 Mô tả chi tiết</h4>
-      <p>{{ file.description | safe }}</p>
+      <p style="color: var(--text-color)">{{ file.description | safe }}</p>
       {# Use safe filter if description contains HTML #}
     </div>
   </div>
@@ -114,8 +77,9 @@
           method="POST"
           id="review-form"
         >
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
           <div class="form-group">
-            <label>⭐ Đánh giá của bạn:</label>
+            <h4 class="card-title">⭐ Đánh giá của bạn:</h4>
             <div class="star-container">
               <i class="fas fa-star star" data-index="1"></i>
               <i class="fas fa-star star" data-index="2"></i>
@@ -149,12 +113,12 @@
 
   <!-- Download Section -->
   <div class="download-section card mb-4">
-    <div class="card-body text-center">
+    <div class="card-body">
       <h4 class="card-title">📥 Tải xuống</h4>
       {% if current_user.is_authenticated %} {% if file.download_url %}
       <a
         href="{{ file.download_url }}"
-        class="btn btn-primary btn-lg"
+        class="btn btn-primary btn-download"
         target="_blank"
         >⬇️ Tải xuống ngay</a
       >

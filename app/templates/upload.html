@@ -8,6 +8,9 @@
       enctype="multipart/form-data"
       id="uploadForm"
     >
+      <!-- CSRF Token -->
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+
       <!-- Flash messages -->
       {% with messages = get_flashed_messages(with_categories=true) %} {% if
       messages %}

@@ -487,22 +487,6 @@ block title %}User Profile{% endblock %} {% block styles %}
     updateAllProgressBars();
   });
 
-  // Hàm cập nhật tất cả thanh tiến trình
-  function updateAllProgressBars() {
-    const progressBars = document.querySelectorAll(".upload-progress-bar");
-    if (progressBars.length === 0) return;
-
-    progressBars.forEach((progressBar) => {
-      const uploadId = progressBar.getAttribute("data-upload-id");
-      if (!uploadId) return;
-
-      updateProgressBar(uploadId);
-    });
-
-    // Kiểm tra cập nhật mỗi 2 giây
-    setTimeout(updateAllProgressBars, 2000); // Tăng thời gian kiểm tra để giảm tải server
-  }
-
   // Hàm cập nhật một thanh tiến trình cụ thể
   function updateProgressBar(uploadId) {
     fetch(`/upload_progress/${uploadId}`)
@@ -525,8 +509,11 @@ block title %}User Profile{% endblock %} {% block styles %}
           progressBar.style.width = `${progress}%`;
           progressText.textContent = `${progress}%`;
 
-          // Nếu tải lên hoàn tất, cập nhật giao diện
-          if (data.status === "completed" && progress === 100) {
+          // Nếu tải lên hoàn tất hoặc thất bại, dừng việc kiểm tra và cập nhật giao diện
+          if (data.status === "completed" || data.status === "failed") {
+            // Đánh dấu upload này đã hoàn thành để không kiểm tra nữa
+            progressBar.dataset.completed = "true";
+
             setTimeout(() => {
               const container = progressBar.closest(".upload-progress-wrapper");
               if (container) {
@@ -542,6 +529,27 @@ block title %}User Profile{% endblock %} {% block styles %}
         }
       })
       .catch((error) => console.error("Error updating progress:", error));
+  }
+
+  // Hàm cập nhật tất cả thanh tiến trình
+  function updateAllProgressBars() {
+    const progressBars = document.querySelectorAll(".upload-progress-bar");
+    if (progressBars.length === 0) return;
+
+    let hasIncomplete = false;
+    progressBars.forEach((progressBar) => {
+      const uploadId = progressBar.getAttribute("data-upload-id");
+      // Chỉ kiểm tra những upload chưa hoàn thành
+      if (uploadId && progressBar.dataset.completed !== "true") {
+        hasIncomplete = true;
+        updateProgressBar(uploadId);
+      }
+    });
+
+    // Chỉ tiếp tục kiểm tra nếu còn upload chưa hoàn thành
+    if (hasIncomplete) {
+      setTimeout(updateAllProgressBars, 2000);
+    }
   }
 </script>
 {% endblock %}

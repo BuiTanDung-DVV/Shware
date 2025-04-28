@@ -6,7 +6,7 @@ import time
 import uuid
 from flask import Blueprint, request, redirect, render_template, flash, url_for, jsonify, session
 from flask_login import login_required, current_user
-from app import limiter
+# from app import limiter
 from werkzeug.utils import secure_filename
 from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
@@ -132,14 +132,16 @@ def background_upload_task(upload_id, file_content, filename, title, description
             'profile_pic': current_user_profile_pic,
             'description': description,
             'tags': tags,
-            'tag_refs': [ref.id for ref in tag_refs],  # Lưu references đến các tags
+            'tag_refs': [ref.id for ref in tag_refs],
             'upload_date': current_time.isoformat(),
             'download_url': response.get('webViewLink'),
             'drive_file_id': response.get('id'),
             'avg_rating': 0,
             'total_reviews': 0,
             'total_rating_sum': 0,
-            'upload_status': 'completed'
+            'upload_status': 'completed',
+            'approve': False,  
+            'visibility': False  
         })
 
         upload_progress[upload_id]['progress'] = 100
@@ -228,7 +230,9 @@ def upload_file():
                 'thumbnail_url': thumbnail_url,
                 'upload_id': upload_id,
                 'upload_status': 'pending',
-                'upload_date': datetime.utcnow().isoformat()
+                'upload_date': datetime.utcnow().isoformat(),
+                'approve': False, 
+                'visibility': False 
             })
             
             if not isinstance(doc_ref, firestore.DocumentReference):
@@ -271,7 +275,7 @@ def upload_file():
 
 @upload_bp.route('/upload_progress/<upload_id>', methods=['GET'])
 @login_required
-@limiter.limit("60 per minute")
+# @limiter.limit("60 per minute")
 def get_upload_progress(upload_id):
     """API endpoint để lấy tiến độ tải lên"""
     # Check in-memory progress first

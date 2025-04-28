@@ -1,8 +1,206 @@
-{% extends 'base.html' %} {% block title %}File Management | Admin{% endblock %}
-{% block content %}
-<div class="container mt-5">
-  <h2 class="mb-4">File Management</h2>
+{% extends "base.html" %} {% block title %}Admin - Files Management{% endblock
+%} {% block content %}
+<style>
+          /* CSS cho bảng và các ô */
+          .table-responsive {
+            overflow-x: auto;
+          }
 
+          .table {
+            width: 100%;
+            table-layout: fixed;
+            border-collapse: separate;
+            border-spacing: 0;
+          }
+
+          /* Định nghĩa chiều rộng cố định cho từng cột */
+          .table th:nth-child(1) {
+            width: 25%;
+          } /* Title */
+          .table th:nth-child(2) {
+            width: 10%;
+          } /* Size */
+          .table th:nth-child(3) {
+            width: 10%;
+          } /* Author */
+          .table th:nth-child(4) {
+            width: 15%;
+          } /* Upload Date */
+          .table th:nth-child(5) {
+            width: 10%;
+          } /* Approved */
+          .table th:nth-child(6) {
+            width: 10%;
+          } /* Visible */
+          .table th:nth-child(7) {
+            width: 15%;
+          } /* Actions */
+
+          /* Xử lý text overflow cho các ô */
+          .table td {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 0;
+            padding: 12px;
+            border-bottom: 1px solid #dee2e6;s
+          }
+          /* Style cho header */
+          .table thead th {
+            background-color: #f8f9fa;
+            padding: 12px;
+            font-weight: 600;
+            border-bottom: 2px solid #dee2e6;
+          }
+          /* Style cho hàng có thể click */
+          .table tbody tr {
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+          }
+
+          .table tbody tr:hover {
+          background-color: #f8f9fa;
+          transform: translateY(-2px);
+          box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+          z-index: 1;
+          }
+
+      /* Hiệu ứng cho các nút */
+      .btn {
+          transition: all 0.2s ease;
+      }
+
+      .btn:hover {
+          transform: translateY(-1px);
+          box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      }
+
+      /* Hiệu ứng cho switches */
+      .form-check-input {
+          transition: all 0.2s ease;
+          cursor: pointer;
+      }
+
+      .form-check-input:checked {
+          background-color: #28a745;
+          border-color: #28a745;
+      }
+
+      .form-check-input:hover {
+          opacity: 0.8;
+      }
+
+          /* Ngăn click event trên các controls */
+          .table .form-check,
+          .table .btn-group {
+            position: relative;
+            z-index: 2;
+          }
+
+          .table .form-check *,
+          .table .btn-group * {
+            pointer-events: auto;
+          }
+
+          /* Cho phép wrap text trong ô tiêu đề khi hover
+          .table td.title-cell:hover {
+            white-space: normal;
+            overflow: visible;
+            position: relative;
+            z-index: 1;
+            background-color: #fff;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+          }*/
+
+          /* Đảm bảo các nút action không bị cắt */
+          .table .btn-group {
+            display: flex;
+            gap: 5px;
+            flex-wrap: nowrap;
+          }
+          /* Style cho search box và filter */
+    .searchInput, .statusFilter {
+        transition: all 0.3s ease;
+        border: 1px solid #dee2e6;
+        border-radius: 4px;
+    }
+
+    .searchInput:focus, .statusFilter:focus {
+        border-color: #86b7fe;
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+    }
+
+    /* Pagination styles */
+  .pagination-wrapper {
+      display: flex;
+      justify-content: center;
+      margin-top: 2rem;
+      margin-bottom: 2rem;
+  }
+
+  .pagination {
+      display: flex;
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      gap: 5px;
+  }
+
+  .page-item {
+      display: inline-flex;
+  }
+
+  .page-link {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 36px;
+      height: 36px;
+      padding: 0.375rem 0.75rem;
+      border: 1px solid #dee2e6;
+      border-radius: 4px;
+      color: #007bff;
+      text-decoration: none;
+      transition: all 0.2s ease;
+  }
+
+  .page-link:hover {
+      background-color: #e9ecef;
+      border-color: #dee2e6;
+      color: #0056b3;
+      z-index: 2;
+  }
+
+  .page-item.active .page-link {
+      background-color: #007bff;
+      border-color: #007bff;
+      color: white;
+  }
+
+  .page-item.disabled .page-link {
+      color: #6c757d;
+      pointer-events: none;
+      background-color: #fff;
+      border-color: #dee2e6;
+  }
+
+  /* First/Last page buttons */
+  .page-item:first-child .page-link,
+  .page-item:last-child .page-link {
+      font-size: 0.8rem;
+      padding: 0.375rem 0.5rem;
+  }
+
+  /* Ellipsis style */
+  .page-item.disabled.ellipsis .page-link {
+      background-color: transparent;
+      border: none;
+  }
+</style>
+
+<div class="container mt-4">
+  <h2>Files Management</h2>
   <div class="d-flex justify-content-between align-items-center mb-3">
     <a href="{{ url_for('admin.dashboard') }}" class="btn btn-secondary"
       >&larr; Back to Dashboard</a
@@ -12,10 +210,13 @@
         type="text"
         id="searchInput"
         class="form-control"
-        placeholder="Search files..."
+        style="width: 190px"
+        placeholder="Search files or author..."
       />
-      <select id="visibilityFilter" class="form-select">
+      <select id="statusFilter" class="form-select">
         <option value="">All Files</option>
+        <option value="approved">Approved</option>
+        <option value="pending">Pending</option>
         <option value="public">Public</option>
         <option value="private">Private</option>
       </select>
@@ -23,50 +224,66 @@
   </div>
 
   <div class="table-responsive">
-    <table class="table table-bordered table-hover">
+    <table class="table">
       <thead class="table-light">
         <tr>
           <th>Title</th>
-          <th>Author</th>
-          <th>Type</th>
           <th>Size</th>
+          <th>Author</th>
           <th>Upload Date</th>
-          <th>Visibility</th>
+          <th>Approved</th>
+          <th>Visible</th>
           <th>Actions</th>
         </tr>
       </thead>
       <tbody>
         {% for file in files %}
-        <tr data-file-id="{{ file.id }}">
+        <tr
+          data-file-id="{{ file.id }}"
+          onclick="goToFileDetail(event, '{{ file.id }}')"
+        >
+          <td title="{{ file.title }}">{{ file.title }}</td>
+          <td>{{file.file_size|format_filesize}}</td>
+          <td title="{{ file.author }}">{{ file.author }}</td>
+          <td>{{ file.upload_date | format_datetime }}</td>
           <td>
-            <a
-              href="{{ file.download_url }}"
-              target="_blank"
-              class="text-decoration-none"
+            <div
+              class="form-check form-switch"
+              onclick="event.stopPropagation();"
             >
-              {{ file.title }}
-            </a>
+              <input
+                class="form-check-input approve-toggle"
+                type="checkbox"
+                {%
+                if
+                file.approve
+                %}checked{%
+                endif
+                %}
+                onchange="toggleApprove('{{ file.id }}', this.checked)"
+              />
+            </div>
           </td>
-          <td>{{ file.author_name }}</td>
-          <td>{{ file.file_type }}</td>
-          <td>{{ file.file_size | filesizeformat }}</td>
-          <td>{{ file.upload_date | datetime }}</td>
           <td>
-            <div class="form-check form-switch">
+            <div
+              class="form-check form-switch"
+              onclick="event.stopPropagation();"
+            >
               <input
                 class="form-check-input visibility-toggle"
                 type="checkbox"
                 {%
                 if
-                file.is_public
+                file.visibility
                 %}checked{%
                 endif
                 %}
+                onchange="toggleVisibility('{{ file.id }}', this.checked)"
               />
             </div>
           </td>
           <td>
-            <div class="btn-group">
+            <div class="btn-group" onclick="event.stopPropagation();">
               <a
                 href="{{ file.download_url }}"
                 class="btn btn-sm btn-info"
@@ -74,7 +291,10 @@
               >
                 <i class="fas fa-download"></i>
               </a>
-              <button type="button" class="btn btn-sm btn-danger delete-file">
+              <button
+                class="btn btn-danger btn-sm"
+                onclick="deleteFile('{{ file.id }}')"
+              >
                 <i class="fas fa-trash"></i>
               </button>
             </div>
@@ -84,42 +304,235 @@
       </tbody>
     </table>
   </div>
-</div>
 
-<!-- Confirmation Modal -->
-<div class="modal fade" id="confirmationModal" tabindex="-1">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">Confirm Action</h5>
-        <button
-          type="button"
-          class="btn-close"
-          data-bs-dismiss="modal"
-        ></button>
-      </div>
-      <div class="modal-body">
-        Are you sure you want to proceed with this action?
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-          Cancel
-        </button>
-        <button type="button" class="btn btn-primary" id="confirmAction">
-          Confirm
-        </button>
-      </div>
-    </div>
+  <!-- Pagination -->
+  {% if total_pages > 1 %}
+  <div class="pagination-wrapper">
+    <nav aria-label="File list pagination">
+      <ul class="pagination">
+        <!-- First page button -->
+        <li class="page-item {% if not has_prev %}disabled{% endif %}">
+          <a
+            class="page-link"
+            href="{{ url_for('admin.manage_files', page=1) if has_prev else '#' }}"
+            {%
+            if
+            not
+            has_prev
+            %}tabindex="-1"
+            aria-disabled="true"
+            {%
+            endif
+            %}
+          >
+            <i class="fas fa-angle-double-left"></i>
+          </a>
+        </li>
+
+        <!-- Previous button -->
+        <li class="page-item {% if not has_prev %}disabled{% endif %}">
+          <a
+            class="page-link"
+            href="{{ url_for('admin.manage_files', page=prev_page) if has_prev else '#' }}"
+            {%
+            if
+            not
+            has_prev
+            %}tabindex="-1"
+            aria-disabled="true"
+            {%
+            endif
+            %}
+          >
+            <i class="fas fa-angle-left"></i>
+          </a>
+        </li>
+
+        <!-- Page Numbers -->
+        {% for p in pages %} {% if p == '...' %}
+        <li class="page-item disabled ellipsis">
+          <span class="page-link">...</span>
+        </li>
+        {% else %}
+        <li class="page-item {% if p == page %}active{% endif %}">
+          <a
+            class="page-link"
+            href="{{ url_for('admin.manage_files', page=p) }}"
+            >{{ p }}</a
+          >
+        </li>
+        {% endif %} {% endfor %}
+
+        <!-- Next button -->
+        <li class="page-item {% if not has_next %}disabled{% endif %}">
+          <a
+            class="page-link"
+            href="{{ url_for('admin.manage_files', page=next_page) if has_next else '#' }}"
+            {%
+            if
+            not
+            has_next
+            %}tabindex="-1"
+            aria-disabled="true"
+            {%
+            endif
+            %}
+          >
+            <i class="fas fa-angle-right"></i>
+          </a>
+        </li>
+
+        <!-- Last page button -->
+        <li class="page-item {% if not has_next %}disabled{% endif %}">
+          <a
+            class="page-link"
+            href="{{ url_for('admin.manage_files', page=total_pages) if has_next else '#' }}"
+            {%
+            if
+            not
+            has_next
+            %}tabindex="-1"
+            aria-disabled="true"
+            {%
+            endif
+            %}
+          >
+            <i class="fas fa-angle-double-right"></i>
+          </a>
+        </li>
+      </ul>
+    </nav>
   </div>
+  {% endif %}
 </div>
 {% endblock %} {% block scripts %}
 <script>
+  // Function to navigate to file detail page
+  function goToFileDetail(event, fileId) {
+    // Ignore if clicking on controls
+    if (
+      event.target.closest(".form-check") ||
+      event.target.closest(".btn-group")
+    ) {
+      return;
+    }
+    window.location.href =
+      "{{ url_for('files.file_detail', doc_id='') }}" + fileId;
+  }
+
+  function toggleApprove(fileId, approved) {
+    fetch("{{url_for('admin.manage_file')}}", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": "{{ csrf_token() }}",
+      },
+      body: JSON.stringify({
+        fileId: fileId,
+        action: "toggleApprove",
+        approve: approved,
+      }),
+    })
+      .then((response) => {
+        if (!response.ok) {
+          return response.text().then((text) => {
+            throw new Error(text || "Network response was not ok");
+          });
+        }
+        return response.json();
+      })
+      .then((data) => {
+        if (!data.success) {
+          throw new Error(data.error || "Unknown error occurred");
+        }
+      })
+      .catch((error) => {
+        console.error("Error:", error);
+        alert(error.message || "Error updating approval status");
+        // Revert the toggle on error
+        const checkbox = document.querySelector(
+          `tr[data-file-id="${fileId}"] .approve-toggle`
+        );
+        if (checkbox) checkbox.checked = !approved;
+      });
+  }
+
+  function toggleVisibility(fileId, visible) {
+    fetch("{{url_for('admin.manage_file')}}", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": "{{ csrf_token() }}",
+      },
+      body: JSON.stringify({
+        fileId: fileId,
+        action: "toggleVisibility",
+        visibility: visible,
+      }),
+    })
+      .then((response) => {
+        if (!response.ok) {
+          return response.text().then((text) => {
+            throw new Error(text || "Network response was not ok");
+          });
+        }
+        return response.json();
+      })
+      .then((data) => {
+        if (!data.success) {
+          throw new Error(data.error || "Unknown error occurred");
+        }
+      })
+      .catch((error) => {
+        console.error("Error:", error);
+        alert(error.message || "Error updating visibility");
+        // Revert the toggle on error
+        const checkbox = document.querySelector(
+          `tr[data-file-id="${fileId}"] .visibility-toggle`
+        );
+        if (checkbox) checkbox.checked = !visible;
+      });
+  }
+
+  function deleteFile(fileId) {
+    if (!confirm("Are you sure you want to delete this file?")) {
+      return;
+    }
+
+    fetch("{{url_for('admin.manage_file')}}", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": "{{ csrf_token() }}",
+      },
+      body: JSON.stringify({
+        fileId: fileId,
+        action: "delete",
+      }),
+    })
+      .then((response) => {
+        if (!response.ok) {
+          return response.text().then((text) => {
+            throw new Error(text || "Network response was not ok");
+          });
+        }
+        return response.json();
+      })
+      .then((data) => {
+        if (!data.success) {
+          throw new Error(data.error || "Unknown error occurred");
+        }
+        // Remove the row from the table
+        const row = document.querySelector(`tr[data-file-id="${fileId}"]`);
+        if (row) row.remove();
+      })
+      .catch((error) => {
+        console.error("Error:", error);
+        alert(error.message || "Error deleting file");
+      });
+  }
   document.addEventListener("DOMContentLoaded", function () {
-    const modal = new bootstrap.Modal(
-      document.getElementById("confirmationModal")
-    );
-    let currentAction = null;
-    let currentFileId = null;
+    //const csrfToken = document.getElementById("csrf_token").value;
 
     // Search functionality
     document
@@ -134,114 +547,40 @@
         });
       });
 
-    // Visibility filter
+    // Status filter
     document
-      .getElementById("visibilityFilter")
+      .getElementById("statusFilter")
       .addEventListener("change", function (e) {
         const filterValue = e.target.value.toLowerCase();
         const rows = document.querySelectorAll("tbody tr");
 
         rows.forEach((row) => {
-          const visibilityToggle = row.querySelector(".visibility-toggle");
-          const isPublic = visibilityToggle.checked;
-
           if (!filterValue) {
             row.style.display = "";
-          } else if (filterValue === "public" && isPublic) {
-            row.style.display = "";
-          } else if (filterValue === "private" && !isPublic) {
-            row.style.display = "";
-          } else {
-            row.style.display = "none";
+            return;
+          }
+
+          const isApproved = row.querySelector(".approve-toggle").checked;
+          const isVisible = row.querySelector(".visibility-toggle").checked;
+
+          switch (filterValue) {
+            case "approved":
+              row.style.display = isApproved ? "" : "none";
+              break;
+            case "pending":
+              row.style.display = !isApproved ? "" : "none";
+              break;
+            case "public":
+              row.style.display = isApproved && isVisible ? "" : "none";
+              break;
+            case "private":
+              row.style.display = !isApproved || !isVisible ? "" : "none";
+              break;
+            default:
+              row.style.display = "";
           }
         });
       });
-
-    // Visibility toggle
-    document.querySelectorAll(".visibility-toggle").forEach((toggle) => {
-      toggle.addEventListener("change", function () {
-        const row = this.closest("tr");
-        currentFileId = row.dataset.fileId;
-        currentAction = {
-          type: "toggleVisibility",
-          visibility: this.checked,
-        };
-        modal.show();
-      });
-    });
-
-    // Delete file
-    document.querySelectorAll(".delete-file").forEach((button) => {
-      button.addEventListener("click", function () {
-        const row = this.closest("tr");
-        currentFileId = row.dataset.fileId;
-        currentAction = {
-          type: "delete",
-        };
-        modal.show();
-      });
-    });
-
-    // Handle confirmation
-    document
-      .getElementById("confirmAction")
-      .addEventListener("click", async function () {
-        if (!currentAction || !currentFileId) return;
-
-        try {
-          const response = await fetch("/admin/manage_file", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "X-CSRFToken": "{{ csrf_token() }}",
-            },
-            body: JSON.stringify({
-              fileId: currentFileId,
-              action: currentAction.type,
-              ...currentAction,
-            }),
-          });
-
-          const result = await response.json();
-          if (result.success) {
-            if (currentAction.type === "delete") {
-              const row = document.querySelector(
-                `tr[data-file-id="${currentFileId}"]`
-              );
-              row.remove();
-            }
-            showAlert("Action completed successfully", "success");
-          } else {
-            throw new Error(result.error || "Action failed");
-          }
-        } catch (error) {
-          showAlert(error.message, "danger");
-          // Revert UI changes on error
-          if (currentAction.type === "toggleVisibility") {
-            const toggle = document.querySelector(
-              `tr[data-file-id="${currentFileId}"] .visibility-toggle`
-            );
-            toggle.checked = !toggle.checked;
-          }
-        }
-
-        modal.hide();
-        currentAction = null;
-        currentFileId = null;
-      });
-
-    function showAlert(message, type) {
-      const alertDiv = document.createElement("div");
-      alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
-      alertDiv.innerHTML = `
-            ${message}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        `;
-      document
-        .querySelector(".container")
-        .insertBefore(alertDiv, document.querySelector(".table-responsive"));
-      setTimeout(() => alertDiv.remove(), 5000);
-    }
   });
 </script>
 {% endblock %}
