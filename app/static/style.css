@@ -1496,3 +1496,113 @@ body.dark-theme .page-item.disabled .page-link {
   border-color: var(--border-color);
   color: #6c757d;
 }
+
+/* Modal Styles */
+.modal-content {
+  background-color: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-color);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.modal-header {
+  background-color: var(--light-color);
+  border-bottom: 1px solid var(--border-color);
+  border-radius: 8px 8px 0 0;
+  padding: 1rem 1.5rem;
+}
+
+.modal-title {
+  color: var(--primary-color);
+  font-weight: 600;
+}
+
+.modal-body {
+  padding: 1.5rem;
+}
+
+.modal-footer {
+  background-color: var(--light-color);
+  border-top: 1px solid var(--border-color);
+  border-radius: 0 0 8px 8px;
+  padding: 1rem 1.5rem;
+}
+
+/* Modal Form Controls */
+.modal .form-control {
+  background-color: var(--input-bg);
+  border: 1px solid var(--input-border);
+  color: var(--text-color);
+  border-radius: 4px;
+  padding: 0.5rem 0.75rem;
+}
+
+.modal .form-control:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+}
+
+.modal .form-control[readonly] {
+  background-color: var(--light-color);
+  opacity: 0.8;
+}
+
+.modal .form-label {
+  color: var(--text-color);
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+}
+
+/* Modal Buttons */
+.modal .btn-secondary {
+  background-color: var(--light-color);
+  border-color: var(--border-color);
+  color: var(--text-color);
+}
+
+.modal .btn-secondary:hover {
+  background-color: var(--border-color);
+  border-color: var(--border-color);
+  color: var(--text-color);
+}
+
+.modal .btn-primary {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+  color: white;
+}
+
+.modal .btn-primary:hover {
+  background-color: var(--link-hover-color);
+  border-color: var(--link-hover-color);
+}
+
+/* User Detail Modal Specific */
+#userDetailModal .rounded-circle {
+  border: 3px solid var(--primary-color);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Confirmation Modal Specific */
+#confirmationModal .modal-body {
+  font-size: 1.1rem;
+  text-align: center;
+  padding: 2rem 1.5rem;
+}
+
+/* Modal Close Button */
+.modal .btn-close {
+  color: var(--text-color);
+  opacity: 0.7;
+}
+
+.modal .btn-close:hover {
+  opacity: 1;
+}
+
+/* Modal Backdrop */
+.modal-backdrop.show {
+  opacity: 0.5;
+  backdrop-filter: blur(2px);
+}
