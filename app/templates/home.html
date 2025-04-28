@@ -6,9 +6,7 @@
   href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
 />
 {% endblock %} {% block content %}
-<div class="container mt-5">
-  <h2 class="mb-4 text-center display-5">📂 Kho Tài Liệu Chia Sẻ</h2>
-
+<div class="container mt-1">
   {% if not current_user.is_authenticated %}
   <div class="alert alert-warning text-center fs-5">
     🔒 Vui lòng
@@ -19,7 +17,7 @@
 
   <!-- Featured Files Slider Section -->
   <div class="featured-files-section mb-5">
-    <h4 class="mb-3">🔥 Tài liệu mới cập nhật</h4>
+    <h4 class="mb-3">🔥 Phần mềm mới cập nhật</h4>
     <div class="featured-slider-container">
       <div class="featured-slider">
         {% for featured_file in latest_files %}

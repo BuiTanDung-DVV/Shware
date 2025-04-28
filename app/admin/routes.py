@@ -296,10 +296,12 @@ def manage_file():
 @admin_required
 def get_stats():
     try:
-        total_users = User.query.count()
+        print(f"Total users: {total_users}")
+        total_users = db_firestore.collection('users').count().get()[0][0]
         total_files = db_firestore.collection('files').count().get()[0][0]
         # total_posts = db_firestore.collection('posts').count().get()[0][0]
 
+        
         # Get active users in last 30 days
         thirty_days_ago = datetime.now() - timedelta(days=30)
         active_users = db_firestore.collection('users')\
