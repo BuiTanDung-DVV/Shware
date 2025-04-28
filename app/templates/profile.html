@@ -309,7 +309,7 @@ block title %}User Profile{% endblock %} {% block styles %}
           <p><strong>Email:</strong> {{ user_info.email }}</p>
           <p>
             <strong>Member Since:</strong> {{ user_info.registration_date |
-            timestamp_to_date }}
+            format_timestamp }}
           </p>
         </div>
         <div class="profile-update-form">
@@ -439,6 +439,7 @@ block title %}User Profile{% endblock %} {% block styles %}
   </div>
 </div>
 
+{% endblock %} {% block scripts %}
 <script>
   document.addEventListener("DOMContentLoaded", function () {
     // Check if there's an anchor in the URL
@@ -543,5 +544,4 @@ block title %}User Profile{% endblock %} {% block styles %}
       .catch((error) => console.error("Error updating progress:", error));
   }
 </script>
-
 {% endblock %}

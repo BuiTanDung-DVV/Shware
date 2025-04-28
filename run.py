@@ -1,4 +1,3 @@
-from flask import session
 from app import create_app, db
 
 

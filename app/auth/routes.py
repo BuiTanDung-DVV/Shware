@@ -39,44 +39,58 @@ def get_default_profile_pic_url():
 
 # --Helper Function to Sync User Data--
 def sync_user_to_local_and_firestore(uid, email, display_name, profile_pic_url, auth_provider):
-    # Get or initialize role, default to 'user'
-    try:
-        user_record = firebase_auth.get_user(uid)
-        role = user_record.custom_claims.get('role', 'user') if user_record.custom_claims else 'user'
-    except:
-        role = 'user'
+    # First check existing data in Firestore
+    firestore_db = firestore.client()
+    user_doc_ref = firestore_db.collection('users').document(uid)
+    user_doc = user_doc_ref.get()
+    
+    # Get existing role from Firestore or Firebase Auth
+    if user_doc.exists:
+        firestore_data = user_doc.to_dict()
+        role = firestore_data.get('role', 'user')
+    else:
+        # If not in Firestore, check Firebase Auth
+        try:
+            user_record = firebase_auth.get_user(uid)
+            role = user_record.custom_claims.get('role', 'user') if user_record.custom_claims else 'user'
+        except:
+            role = 'user'
 
-    # Find or create user in SQL
+    # Update or create user in SQL database
     user = User.query.filter_by(id=uid).first()
     if not user:
         user = User.query.filter_by(email=email).first()
         if user:
+            # Update existing user found by email
             user.id = uid
             user.name = display_name
             user.profile_pic = profile_pic_url
             user.role = role
         else:
+            # Create new user
             user = User(id_=uid, name=display_name, email=email, profile_pic=profile_pic_url, role=role)
             db.session.add(user)
-    elif user.profile_pic != profile_pic_url:
-        user.profile_pic = profile_pic_url
+    else:
+        # Update existing user if needed
+        if user.profile_pic != profile_pic_url:
+            user.profile_pic = profile_pic_url
+        if user.name != display_name:
+            user.name = display_name
     db.session.commit()
 
-    # Đồng bộ với Firestore
-    firestore_db = firestore.client()
-    user_doc_ref = firestore_db.collection('users').document(uid)
-    user_doc = user_doc_ref.get()
-
+    # Update Firestore
     if user_doc.exists:
+        # Only update necessary fields for existing users
         update_data = {
-            'last_login': datetime.now(),
-            'role': role  # Include role in updates
+            'last_login': datetime.now()
         }
-        existing_data = user_doc.to_dict()
-        if existing_data.get('profile_pic') != profile_pic_url:
+        if user_doc.get('profile_pic') != profile_pic_url:
             update_data['profile_pic'] = profile_pic_url
+        if user_doc.get('name') != display_name:
+            update_data['name'] = display_name
         user_doc_ref.update(update_data)
     else:
+        # Create new user document in Firestore
         user_doc_ref.set({
             'name': display_name,
             'email': email,
@@ -84,7 +98,7 @@ def sync_user_to_local_and_firestore(uid, email, display_name, profile_pic_url, 
             'created_at': user.registration_date or datetime.now(),
             'last_login': datetime.now(),
             'auth_provider': auth_provider,
-            'role': role  # Include role in new user data
+            'role': role
         })
 
     return user

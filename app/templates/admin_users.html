@@ -1,0 +1,646 @@
+{% extends 'base.html' %}
+{% block title %}Quản lý người dùng | Admin{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-0">Quản lý người dùng</h2>
+            <p class="text-muted">Quản lý tài khoản và phân quyền người dùng</p>
+        </div>
+        <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Quay lại Dashboard
+        </a>
+    </div>
+
+    <!-- Stats Row -->
+    <div class="stats-row">
+        <div class="stat-card total">
+            <div class="icon">
+                <i class="fas fa-users"></i>
+            </div>
+            <p class="stat-label">Tổng số người dùng</p>
+            <h3 class="stat-value" id="totalUsers">{{ users|length }}</h3>
+        </div>
+        
+        <div class="stat-card active">
+            <div class="icon">
+                <i class="fas fa-user-check"></i>
+            </div>
+            <p class="stat-label">Đang hoạt động</p>
+            <h3 class="stat-value" id="activeUsers">{{ users|selectattr('disabled', 'eq', false)|list|length }}</h3>
+        </div>
+        
+        <div class="stat-card admin">
+            <div class="icon">
+                <i class="fas fa-user-shield"></i>
+            </div>
+            <p class="stat-label">Admin</p>
+            <h3 class="stat-value" id="adminUsers">{{ users|selectattr('role', 'eq', 'admin')|list|length }}</h3>
+        </div>
+        
+        <div class="stat-card disabled">
+            <div class="icon">
+                <i class="fas fa-user-lock"></i>
+            </div>
+            <p class="stat-label">Bị vô hiệu hóa</p>
+            <h3 class="stat-value" id="disabledUsers">{{ users|selectattr('disabled', 'eq', true)|list|length }}</h3>
+        </div>
+    </div>
+
+    <!-- Search and Filter Box -->
+    <div class="search-filter-box">
+        <!-- Search row -->
+        <div class="search-input-group mb-3">
+            <i class="fas fa-search search-icon"></i>
+            <input type="text" id="searchInput" class="search-input" 
+                   placeholder="Tìm kiếm theo tên, email hoặc ID...">
+        </div>
+        <!-- Filter row -->
+        <div class="filter-row d-flex gap-3 align-items-center">
+            <div class="filter-item flex-grow-1">
+                <label class="filter-label me-2">Vai trò</label>
+                <select id="roleFilter" class="filter-select">
+                    <option value="">Tất cả vai trò</option>
+                    <option value="admin">Admin</option>
+                    <option value="user">User</option>
+                    <option value="member">Member</option>
+                </select>
+            </div>
+            <div class="filter-item flex-grow-1">
+                <label class="filter-label me-2">Trạng thái</label>
+                <select id="statusFilter" class="filter-select">
+                    <option value="">Tất cả trạng thái</option>
+                    <option value="active">Đang hoạt động</option>
+                    <option value="disabled">Đã vô hiệu hóa</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- Users Table Card -->
+    <div class="admin-card">
+        <div class="admin-card-header">
+            <h3 class="admin-card-title">Danh sách người dùng</h3>
+        </div>
+        <div class="p-0">
+            <div class="table-responsive">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 50px;"></th>
+                            <th>Tên người dùng</th>
+                            <th>Email</th>
+                            <th>Vai trò</th>
+                            <th>Trạng thái</th>
+                            <th>Ngày đăng ký</th>
+                            <th style="width: 120px;">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user in users %}
+                        <tr data-user-id="{{ user.id }}" data-user-email="{{ user.email }}">
+                            <td>
+                                <img src="{{ user.photo_url or url_for('static', filename='images/default_avatar.jpg') }}" 
+                                     class="admin-avatar" 
+                                     alt="{{ user.display_name }}'s avatar">
+                            </td>
+                            <td>
+                                <div class="fw-bold">{{ user.display_name or user.email }}</div>
+                                <span class="user-id-text">ID: {{ user.id[:8] }}...</span>
+                            </td>
+                            <td>{{ user.email }}</td>
+                            <td>
+                                <select class="admin-select role-select w-auto" 
+                                        {% if user.email == current_user.email %}disabled{% endif %}>
+                                    <option value="user" {% if user.role == 'user' %}selected{% endif %}>User</option>
+                                    <option value="admin" {% if user.role == 'admin' %}selected{% endif %}>Admin</option>
+                                    <option value="member" {% if user.role == 'member' %}selected{% endif %}>Member</option>
+                                </select>
+                            </td>
+                            <td>
+                              <div class="admin-switch-badge-wrapper">
+                                <label class="admin-switch">
+                                    <input type="checkbox" class="status-toggle"
+                                           {% if not user.disabled %}checked{% endif %}
+                                           {% if user.email == current_user.email %}disabled{% endif %}>
+                                    <span class="admin-switch-slider"></span>
+                                </label>
+                                <span class="status-label ms-2">
+                                    {% if not user.disabled %}
+                                    <span class="admin-badge admin-badge-success">Đang hoạt động</span>
+                                    {% else %}
+                                    <span class="admin-badge admin-badge-danger">Đã vô hiệu hóa</span>
+                                    {% endif %}
+                                </span>
+                              </div>
+                            </td>
+                            <td>
+                                {% if user.registration_date %}
+                                <div>{{ user.registration_date| format_timestamp }}</div>
+                                {% else %}
+                                N/A
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="admin-btn-group">
+                                    <button type="button" class="admin-btn admin-btn-outline-info view-user" 
+                                            data-bs-toggle="tooltip" title="Xem chi tiết">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button type="button" class="admin-btn admin-btn-outline-danger delete-user" 
+                                            {% if user.email == current_user.email %}disabled{% endif %}
+                                            data-bs-toggle="tooltip" title="Xóa người dùng">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    {% if total_pages > 1 %}
+    <div class="pagination-wrapper">
+        <nav aria-label="User list pagination">
+            <ul class="pagination justify-content-center">
+                <!-- Previous Button -->
+                <li class="page-item {% if not has_prev %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('admin.manage_users', page=prev_page) if has_prev else '#' }}" 
+                       {% if not has_prev %}tabindex="-1" aria-disabled="true"{% endif %}>
+                        <i class="fas fa-chevron-left"></i>
+                    </a>
+                </li>
+
+                <!-- Page Numbers -->
+                {% for p in pages %}
+                    {% if p == '...' %}
+                        <li class="page-item disabled">
+                            <span class="page-link">...</span>
+                        </li>
+                    {% else %}
+                        <li class="page-item {% if p == page %}active{% endif %}">
+                            <a class="page-link" href="{{ url_for('admin.manage_users', page=p) }}">{{ p }}</a>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+
+                <!-- Next Button -->
+                <li class="page-item {% if not has_next %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('admin.manage_users', page=next_page) if has_next else '#' }}"
+                       {% if not has_next %}tabindex="-1" aria-disabled="true"{% endif %}>
+                        <i class="fas fa-chevron-right"></i>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
+</div>
+
+<!-- User Detail Modal -->
+<div class="modal fade" 
+     id="userDetailModal" 
+     tabindex="-1" 
+     role="dialog"
+     aria-labelledby="userDetailModalLabel">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="userDetailModalLabel">Thông tin chi tiết</h5>
+                <button type="button" 
+                        class="btn-close" 
+                        data-bs-dismiss="modal" 
+                        aria-label="Đóng">
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center mb-3">
+                    <img id="modalUserAvatar" 
+                         src="" 
+                         alt="Ảnh đại diện người dùng" 
+                         class="rounded-circle" 
+                         style="width: 100px; height: 100px; object-fit: cover;">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label" for="modalUserName">Tên người dùng</label>
+                    <input type="text" class="form-control" id="modalUserName" readonly>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label" for="modalUserEmail">Email</label>
+                    <input type="email" class="form-control" id="modalUserEmail" readonly>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label" for="modalUserId">User ID</label>
+                    <input type="text" class="form-control" id="modalUserId" readonly>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label" for="modalUserRegistration">Ngày đăng ký</label>
+                    <input type="text" class="form-control" id="modalUserRegistration" readonly>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label" for="modalUserRole">Vai trò</label>
+                    <input type="text" class="form-control" id="modalUserRole" readonly>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label" for="modalUserStatus">Trạng thái</label>
+                    <input type="text" class="form-control" id="modalUserStatus" readonly>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" 
+                        class="btn btn-secondary" 
+                        data-bs-dismiss="modal">Đóng</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Confirmation Modal -->
+<div class="modal fade" 
+     id="confirmationModal" 
+     tabindex="-1" 
+     role="dialog"
+     aria-labelledby="confirmationModalLabel">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="confirmationModalLabel">Xác nhận</h5>
+                <button type="button" 
+                        class="btn-close" 
+                        data-bs-dismiss="modal" 
+                        aria-label="Đóng">
+                </button>
+            </div>
+            <div class="modal-body">
+                <p id="confirmationMessage"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" 
+                        class="btn btn-secondary" 
+                        data-bs-dismiss="modal" 
+                        id="cancelAction">Hủy</button>
+                <button type="button" 
+                        class="btn btn-primary" 
+                        id="confirmAction">Xác nhận</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+        console.log("DOM Content Loaded in admin_users.html");
+        // Remove automatic modal initialization
+        // Instead, create modal instances only when needed
+        let confirmationModal = null;
+        let userDetailModal = null;
+
+        // Initialize tooltips
+        var tooltipTriggerList = [].slice.call(
+          document.querySelectorAll('[data-bs-toggle="tooltip"]')
+        );
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+          return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+
+        // Search functionality
+        document
+          .getElementById("searchInput")
+          .addEventListener("input", function (e) {
+            const searchTerm = e.target.value.toLowerCase();
+            const rows = document.querySelectorAll("tbody tr");
+
+            rows.forEach((row) => {
+              const text = row.textContent.toLowerCase();
+              row.style.display = text.includes(searchTerm) ? "" : "none";
+            });
+            updateStats();
+          });
+
+        // Role filter
+        document
+          .getElementById("roleFilter")
+          .addEventListener("change", function (e) {
+            filterUsers();
+          });
+
+        // Status filter
+        document
+          .getElementById("statusFilter")
+          .addEventListener("change", function (e) {
+            filterUsers();
+          });
+
+        function filterUsers() {
+          const roleFilter = document
+            .getElementById("roleFilter")
+            .value.toLowerCase();
+          const statusFilter = document
+            .getElementById("statusFilter")
+            .value.toLowerCase();
+          const rows = document.querySelectorAll("tbody tr");
+
+          rows.forEach((row) => {
+            const roleSelect = row.querySelector(".role-select");
+            const statusToggle = row.querySelector(".status-toggle");
+            const currentRole = roleSelect.value.toLowerCase();
+            const isActive = statusToggle.checked;
+
+            let showRow = true;
+
+            if (roleFilter && currentRole !== roleFilter) {
+              showRow = false;
+            }
+
+            if (statusFilter === "active" && !isActive) {
+              showRow = false;
+            } else if (statusFilter === "disabled" && isActive) {
+              showRow = false;
+            }
+
+            row.style.display = showRow ? "" : "none";
+          });
+
+          updateStats();
+        }
+
+        function updateStats() {
+          const visibleRows = document.querySelectorAll(
+            'tbody tr:not([style*="display: none"])'
+          );
+          const activeUsers = Array.from(visibleRows).filter(
+            (row) => row.querySelector(".status-toggle").checked
+          ).length;
+          const adminUsers = Array.from(visibleRows).filter(
+            (row) => row.querySelector(".role-select").value === "admin"
+          ).length;
+          const disabledUsers = Array.from(visibleRows).filter(
+            (row) => !row.querySelector(".status-toggle").checked
+          ).length;
+
+          document.getElementById("totalUsers").textContent =
+            visibleRows.length;
+          document.getElementById("activeUsers").textContent = activeUsers;
+          document.getElementById("adminUsers").textContent = adminUsers;
+          document.getElementById("disabledUsers").textContent = disabledUsers;
+        }
+
+        // View user details
+        document.querySelectorAll(".view-user").forEach((button) => {
+          button.addEventListener("click", function () {
+            console.log("Nút Xem chi tiết được nhấn!");
+            const row = this.closest("tr");
+            const userId = row.dataset.userId;
+            const name = row.querySelector(".fw-bold").textContent;
+            const email = row.dataset.userEmail;
+            const avatar = row.querySelector("img").src;
+            const role = row.querySelector(".role-select").value;
+            const isActive = row.querySelector(".status-toggle").checked;
+            const registrationDate = row.querySelector(
+              "td:nth-last-child(2)"
+            ).textContent;
+
+            // Initialize modal only when needed
+            if (!userDetailModal) {
+              userDetailModal = new bootstrap.Modal(
+                document.getElementById("userDetailModal")
+              );
+            }
+
+            document.getElementById("modalUserAvatar").src = avatar;
+            document.getElementById("modalUserName").value = name;
+            document.getElementById("modalUserEmail").value = email;
+            document.getElementById("modalUserId").value = userId;
+            document.getElementById("modalUserRegistration").value =
+              registrationDate.trim();
+            document.getElementById("modalUserRole").value =
+              role.charAt(0).toUpperCase() + role.slice(1);
+            document.getElementById("modalUserStatus").value = isActive
+              ? "Đang hoạt động"
+              : "Đã vô hiệu hóa";
+
+            userDetailModal.show();
+          });
+        });
+
+        // Confirmation Modal Helper
+        function showConfirmationModal({ message, onConfirm, onCancel }) {
+          // Initialize modal only when needed
+          if (!confirmationModal) {
+            confirmationModal = new bootstrap.Modal(
+              document.getElementById("confirmationModal")
+            );
+          }
+
+          const modal = document.getElementById("confirmationModal");
+          const messageEl = modal.querySelector("#confirmationMessage");
+          const confirmBtn = modal.querySelector("#confirmAction");
+          const cancelBtn = modal.querySelector("#cancelAction");
+
+          messageEl.textContent = message;
+
+          const handleConfirm = async () => {
+            confirmationModal.hide();
+            removeListeners();
+            await onConfirm();
+          };
+
+          const handleCancel = () => {
+            confirmationModal.hide();
+            removeListeners();
+            if (onCancel) onCancel();
+          };
+
+          const handleModalHidden = () => {
+            removeListeners();
+            if (onCancel) onCancel();
+          };
+
+          const removeListeners = () => {
+            confirmBtn.removeEventListener("click", handleConfirm);
+            cancelBtn.removeEventListener("click", handleCancel);
+            modal.removeEventListener("hidden.bs.modal", handleModalHidden);
+          };
+
+          confirmBtn.addEventListener("click", handleConfirm);
+          cancelBtn.addEventListener("click", handleCancel);
+          modal.addEventListener("hidden.bs.modal", handleModalHidden);
+
+          confirmationModal.show();
+        }
+
+        // Role change
+        document.querySelectorAll(".role-select").forEach((select) => {
+          select.addEventListener("change", function () {
+            const row = this.closest("tr");
+            currentUserId = row.dataset.userId;
+            currentAction = {
+              type: "updateRole",
+              role: this.value,
+            };
+            showConfirmationModal({
+              message: `Bạn có chắc chắn muốn thay đổi vai trò của người dùng này thành ${this.value}?`,
+              onConfirm: async () => {
+                try {
+                  const response = await fetch("{{ url_for('admin.manage_user') }}", {
+                    method: "POST",
+                    headers: {
+                      "Content-Type": "application/json",
+                      "X-CSRFToken": "{{ csrf_token() }}",
+                    },
+                    body: JSON.stringify({
+                      userId: currentUserId,
+                      action: currentAction.type,
+                      ...currentAction,
+                    }),
+                  });
+
+                  // Add debug logging
+                  console.log('Response status:', response.status);
+                  if (!response.ok) {
+                    const text = await response.text();
+                    console.log('Error response:', text);
+                    throw new Error(`Request failed: ${response.status} ${text}`);
+                  }
+
+                  const result = await response.json();
+                  if (result.success) {
+                    //showAlert("Thao tác thành công", "success");
+                  } else {
+                    throw new Error(result.error || "Thao tác thất bại");
+                  }
+                } catch (error) {
+                  //showAlert(error.message, "danger");
+                  // Revert UI changes on error
+                  const select = document.querySelector(
+                    `tr[data-user-id="${currentUserId}"] .role-select`
+                  );
+                  select.value = select.getAttribute("data-original-value");
+                }
+              },
+            });
+          });
+        });
+
+        // Status toggle
+        document.querySelectorAll(".status-toggle").forEach((toggle) => {
+          toggle.addEventListener("change", function () {
+            const row = this.closest("tr");
+            currentUserId = row.dataset.userId;
+            currentAction = {
+              type: "updateStatus",
+              disabled: !this.checked,
+            };
+            showConfirmationModal({
+              message: `Bạn có chắc chắn muốn ${
+                this.checked ? "kích hoạt" : "vô hiệu hóa"
+              } người dùng này?`,
+              onConfirm: async () => {
+                try {
+                  const response = await fetch("{{ url_for('admin.manage_user') }}", {
+                    method: "POST",
+                    headers: {
+                      "Content-Type": "application/json",
+                      "X-CSRFToken": "{{ csrf_token() }}",
+                    },
+                    body: JSON.stringify({
+                      userId: currentUserId,
+                      action: currentAction.type,
+                      ...currentAction,
+                    }),
+                  });
+
+                  const result = await response.json();
+                  if (result.success) {
+                    const statusLabel = row.querySelector(".status-label");
+                    const isActive = !currentAction.disabled;
+                    statusLabel.innerHTML = isActive
+                      ? '<span class="admin-badge admin-badge-success">Đang hoạt động</span>'
+                      : '<span class="admin-badge admin-badge-danger">Đã vô hiệu hóa</span>';
+                    //showAlert("Thao tác thành công", "success");
+                  } else {
+                    throw new Error(result.error || "Thao tác thất bại");
+                  }
+                } catch (error) {
+                  //showAlert(error.message, "danger");
+                  // Revert UI changes on error
+                  const toggle = document.querySelector(
+                    `tr[data-user-id="${currentUserId}"] .status-toggle`
+                  );
+                  toggle.checked = !toggle.checked;
+                }
+              },
+            });
+          });
+        });
+
+        // Delete user
+        document.querySelectorAll(".delete-user").forEach((button) => {
+          button.addEventListener("click", function () {
+            const row = this.closest("tr");
+            currentUserId = row.dataset.userId;
+            currentAction = {
+              type: "deleteUser",
+            };
+            showConfirmationModal({
+              message:
+                "Bạn có chắc chắn muốn xóa người dùng này? Hành động này không thể hoàn tác.",
+              onConfirm: async () => {
+                try {
+                  const response = await fetch("{{ url_for('admin.manage_user') }}", {
+                    method: "POST",
+                    headers: {
+                      "Content-Type": "application/json",
+                      "X-CSRFToken": "{{ csrf_token() }}",
+                    },
+                    body: JSON.stringify({
+                      userId: currentUserId,
+                      action: currentAction.type,
+                      ...currentAction,
+                    }),
+                  });
+                  console
+                  const result = await response.json();
+                  if (result.success) {
+                    const row = document.querySelector(
+                      `tr[data-user-id="${currentUserId}"]`
+                    );
+                    row.remove();
+                    updateStats();
+                    //showAlert("Thao tác thành công", "success");
+                  } else {
+                    throw new Error(result.error || "Thao tác thất bại");
+                  }
+                } catch (error) { 
+                  //showAlert(error.message, "danger");
+                }
+              },
+            });
+          });
+        });
+
+        function showAlert(message, type) {
+          const alertDiv = document.createElement("div");
+          alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+          alertDiv.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+          document
+            .querySelector(".container")
+            .insertBefore(alertDiv, document.querySelector(".card"));
+          setTimeout(() => alertDiv.remove(), 5000);
+        }
+
+        // Initial stats update
+        updateStats();
+  });
+</script>
+{% endblock %}

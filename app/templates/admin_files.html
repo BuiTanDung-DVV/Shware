@@ -1,0 +1,247 @@
+{% extends 'base.html' %} {% block title %}File Management | Admin{% endblock %}
+{% block content %}
+<div class="container mt-5">
+  <h2 class="mb-4">File Management</h2>
+
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <a href="{{ url_for('admin.dashboard') }}" class="btn btn-secondary"
+      >&larr; Back to Dashboard</a
+    >
+    <div class="d-flex gap-2">
+      <input
+        type="text"
+        id="searchInput"
+        class="form-control"
+        placeholder="Search files..."
+      />
+      <select id="visibilityFilter" class="form-select">
+        <option value="">All Files</option>
+        <option value="public">Public</option>
+        <option value="private">Private</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="table-responsive">
+    <table class="table table-bordered table-hover">
+      <thead class="table-light">
+        <tr>
+          <th>Title</th>
+          <th>Author</th>
+          <th>Type</th>
+          <th>Size</th>
+          <th>Upload Date</th>
+          <th>Visibility</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for file in files %}
+        <tr data-file-id="{{ file.id }}">
+          <td>
+            <a
+              href="{{ file.download_url }}"
+              target="_blank"
+              class="text-decoration-none"
+            >
+              {{ file.title }}
+            </a>
+          </td>
+          <td>{{ file.author_name }}</td>
+          <td>{{ file.file_type }}</td>
+          <td>{{ file.file_size | filesizeformat }}</td>
+          <td>{{ file.upload_date | datetime }}</td>
+          <td>
+            <div class="form-check form-switch">
+              <input
+                class="form-check-input visibility-toggle"
+                type="checkbox"
+                {%
+                if
+                file.is_public
+                %}checked{%
+                endif
+                %}
+              />
+            </div>
+          </td>
+          <td>
+            <div class="btn-group">
+              <a
+                href="{{ file.download_url }}"
+                class="btn btn-sm btn-info"
+                target="_blank"
+              >
+                <i class="fas fa-download"></i>
+              </a>
+              <button type="button" class="btn btn-sm btn-danger delete-file">
+                <i class="fas fa-trash"></i>
+              </button>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Confirmation Modal -->
+<div class="modal fade" id="confirmationModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Confirm Action</h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+        ></button>
+      </div>
+      <div class="modal-body">
+        Are you sure you want to proceed with this action?
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          Cancel
+        </button>
+        <button type="button" class="btn btn-primary" id="confirmAction">
+          Confirm
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %} {% block scripts %}
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const modal = new bootstrap.Modal(
+      document.getElementById("confirmationModal")
+    );
+    let currentAction = null;
+    let currentFileId = null;
+
+    // Search functionality
+    document
+      .getElementById("searchInput")
+      .addEventListener("input", function (e) {
+        const searchTerm = e.target.value.toLowerCase();
+        const rows = document.querySelectorAll("tbody tr");
+
+        rows.forEach((row) => {
+          const text = row.textContent.toLowerCase();
+          row.style.display = text.includes(searchTerm) ? "" : "none";
+        });
+      });
+
+    // Visibility filter
+    document
+      .getElementById("visibilityFilter")
+      .addEventListener("change", function (e) {
+        const filterValue = e.target.value.toLowerCase();
+        const rows = document.querySelectorAll("tbody tr");
+
+        rows.forEach((row) => {
+          const visibilityToggle = row.querySelector(".visibility-toggle");
+          const isPublic = visibilityToggle.checked;
+
+          if (!filterValue) {
+            row.style.display = "";
+          } else if (filterValue === "public" && isPublic) {
+            row.style.display = "";
+          } else if (filterValue === "private" && !isPublic) {
+            row.style.display = "";
+          } else {
+            row.style.display = "none";
+          }
+        });
+      });
+
+    // Visibility toggle
+    document.querySelectorAll(".visibility-toggle").forEach((toggle) => {
+      toggle.addEventListener("change", function () {
+        const row = this.closest("tr");
+        currentFileId = row.dataset.fileId;
+        currentAction = {
+          type: "toggleVisibility",
+          visibility: this.checked,
+        };
+        modal.show();
+      });
+    });
+
+    // Delete file
+    document.querySelectorAll(".delete-file").forEach((button) => {
+      button.addEventListener("click", function () {
+        const row = this.closest("tr");
+        currentFileId = row.dataset.fileId;
+        currentAction = {
+          type: "delete",
+        };
+        modal.show();
+      });
+    });
+
+    // Handle confirmation
+    document
+      .getElementById("confirmAction")
+      .addEventListener("click", async function () {
+        if (!currentAction || !currentFileId) return;
+
+        try {
+          const response = await fetch("/admin/manage_file", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-CSRFToken": "{{ csrf_token() }}",
+            },
+            body: JSON.stringify({
+              fileId: currentFileId,
+              action: currentAction.type,
+              ...currentAction,
+            }),
+          });
+
+          const result = await response.json();
+          if (result.success) {
+            if (currentAction.type === "delete") {
+              const row = document.querySelector(
+                `tr[data-file-id="${currentFileId}"]`
+              );
+              row.remove();
+            }
+            showAlert("Action completed successfully", "success");
+          } else {
+            throw new Error(result.error || "Action failed");
+          }
+        } catch (error) {
+          showAlert(error.message, "danger");
+          // Revert UI changes on error
+          if (currentAction.type === "toggleVisibility") {
+            const toggle = document.querySelector(
+              `tr[data-file-id="${currentFileId}"] .visibility-toggle`
+            );
+            toggle.checked = !toggle.checked;
+          }
+        }
+
+        modal.hide();
+        currentAction = null;
+        currentFileId = null;
+      });
+
+    function showAlert(message, type) {
+      const alertDiv = document.createElement("div");
+      alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+      alertDiv.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+      document
+        .querySelector(".container")
+        .insertBefore(alertDiv, document.querySelector(".table-responsive"));
+      setTimeout(() => alertDiv.remove(), 5000);
+    }
+  });
+</script>
+{% endblock %}

@@ -1,0 +1,173 @@
+{% extends "base.html" %} {% block title %}Admin Dashboard{% endblock %} {%
+block content %}
+<div class="container mt-5">
+  <h2 class="mb-4">Admin Dashboard</h2>
+
+  <!-- Quick Actions -->
+  <div class="row mb-4">
+    <div class="col-md-12">
+      <div class="card">
+        <div class="card-header">Quick Actions</div>
+        <div class="card-body">
+          <div class="d-flex gap-2">
+            <a
+              href="{{ url_for('admin.manage_users') }}"
+              class="btn btn-primary"
+            >
+              <i class="fas fa-users"></i> Manage Users
+            </a>
+            <a href="{{ url_for('files.list_files') }}" class="btn btn-info">
+              <i class="fas fa-file"></i> Manage Files
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Statistics Cards -->
+  <div class="row mb-4">
+    <div class="col-md-3">
+      <div class="card bg-primary text-white">
+        <div class="card-body">
+          <h5 class="card-title">Total Users</h5>
+          <h2 class="card-text" id="totalUsers">-</h2>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card bg-success text-white">
+        <div class="card-body">
+          <h5 class="card-title">Active Users (30d)</h5>
+          <h2 class="card-text" id="activeUsers">-</h2>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card bg-info text-white">
+        <div class="card-body">
+          <h5 class="card-title">Total Files</h5>
+          <h2 class="card-text" id="totalFiles">-</h2>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Charts Row -->
+  <div class="row">
+    <div class="col-md-6">
+      <div class="card">
+        <div class="card-header">User Registration Trend</div>
+        <div class="card-body">
+          <canvas id="userTrendChart"></canvas>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="card">
+        <div class="card-header">Activity Distribution</div>
+        <div class="card-body">
+          <canvas id="activityChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %} {% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    // Fetch statistics
+    fetch("/admin/stats")
+      .then((response) => response.json())
+      .then((data) => {
+        // Update statistics cards
+        document.getElementById("totalUsers").textContent = data.total_users;
+        document.getElementById("activeUsers").textContent = data.active_users;
+        document.getElementById("totalFiles").textContent = data.total_files;
+        //document.getElementById("totalPosts").textContent = data.total_posts;
+
+        // User Registration Trend Chart
+        const userTrendCtx = document
+          .getElementById("userTrendChart")
+          .getContext("2d");
+        new Chart(userTrendCtx, {
+          type: "line",
+          data: {
+            labels: data.registration_trend.labels,
+            datasets: [
+              {
+                label: "New Users",
+                data: data.registration_trend.data,
+                borderColor: "rgb(75, 192, 192)",
+                tension: 0.1,
+                fill: true,
+                backgroundColor: "rgba(75, 192, 192, 0.2)",
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              title: {
+                display: true,
+                text: "Monthly User Registrations",
+              },
+              legend: {
+                position: "bottom",
+              },
+            },
+            scales: {
+              y: {
+                beginAtZero: true,
+                ticks: {
+                  stepSize: 1,
+                },
+              },
+            },
+          },
+        });
+
+        // Activity Distribution Chart
+        const activityCtx = document
+          .getElementById("activityChart")
+          .getContext("2d");
+        new Chart(activityCtx, {
+          type: "doughnut",
+          data: {
+            labels: data.activity_distribution.labels,
+            datasets: [
+              {
+                data: data.activity_distribution.data,
+                backgroundColor: [
+                  "rgb(54, 162, 235)",
+                  "rgb(255, 205, 86)",
+                  "rgb(255, 99, 132)",
+                ],
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              title: {
+                display: true,
+                text: "Content Distribution",
+              },
+              legend: {
+                position: "bottom",
+              },
+            },
+          },
+        });
+      })
+      .catch((error) => {
+        console.error("Error fetching stats:", error);
+        const errorDiv = document.createElement("div");
+        errorDiv.className = "alert alert-danger";
+        errorDiv.textContent = "Error loading dashboard statistics";
+        //document.querySelector(".container").prepend(errorDiv);
+      });
+  });
+</script>
+{% endblock %}
