@@ -2,9 +2,9 @@ from flask import render_template, session, redirect, url_for, flash, Blueprint,
 from firebase_admin import firestore, auth as firebase_auth
 from flask_login import login_required, current_user
 from ..auth.forms import ProfileUpdateForm
-from .. import db 
 from ..models.user import User
 from ..files_management.upload import upload_progress
+from datetime import datetime
 
 user_profile_bp = Blueprint('user_profile', __name__)
 db_firestore = firestore.client()
@@ -35,27 +35,18 @@ def profile():
         
     if form.validate_on_submit():
         print('Form submitted and validated.')
-        flash('Display name updated successfully01.', 'success00')
 
         display_name = form.display_name.data
         if display_name and display_name != (firebase_user.display_name or ''):
             try:
                 # Update Firebase Auth
                 firebase_auth.update_user(user_id, display_name=display_name)
-                
-                # Update local SQLAlchemy DB
-                local_user = User.query.get(user_id)
-                if local_user:
-                    local_user.name = display_name
-                    db.session.commit()
 
                 # Update Firestore 'users' collection
                 try:
                     db_firestore.collection('users').document(user_id).update({'name': display_name})
                 except Exception as firestore_e:
-                    # Log or flash a specific error for Firestore update failure
-                    flash(f'Error updating Firestore profile name: {firestore_e}', 'warning') 
-                    # Decide if this should prevent the success message below
+                    flash(f'Error updating Firestore profile name: {firestore_e}', 'warning')
 
                 flash('Display name updated successfully.', 'success')
                 firebase_user = firebase_auth.get_user(user_id) # Refresh user data
@@ -64,21 +55,16 @@ def profile():
 
         # --- Update Password Logic (only if user has password provider and fields submitted) ---
         new_password = form.new_password.data
-        # Only attempt password update if the user has a password provider
-        # and the new_password field was actually filled out.
         if has_password_provider and new_password:
-             # The form's validate method already checks if current_password is provided
-             # when new_password is set.
             try:
                 firebase_auth.update_user(user_id, password=new_password)
                 flash('Password updated successfully. Consider logging out and back in.', 'success')
             except firebase_auth.FirebaseError as e:
-                 flash(f'Error updating password: {e.code}', 'danger')
+                flash(f'Error updating password: {e.code}', 'danger')
             except Exception as e:
-                 flash(f'An unexpected error occurred while updating password: {e}', 'danger')
+                flash(f'An unexpected error occurred while updating password: {e}', 'danger')
         elif not has_password_provider and new_password:
             flash('Password cannot be changed for accounts logged in via Google or other providers.', 'info')
-
 
         return redirect(url_for('user_profile.profile'))
     elif request.method == 'POST': 
@@ -115,7 +101,38 @@ def profile():
     except Exception as e:
         flash(f"Error fetching user uploads: {e}", "danger")
 
-    # Pass the user uploads to the template
     return render_template('profile.html', user_info=user_info, form=form, 
                          has_password_provider=has_password_provider, 
                          user_uploads=user_uploads)
+
+@user_profile_bp.route('/subscription')
+@login_required
+def subscription():
+    # Get payment history
+    payment_history = []
+    try:
+        payments_query = db_firestore.collection('payments').where('user_id', '==', current_user.id).order_by('created_at', direction=firestore.Query.DESCENDING).stream()
+        for doc in payments_query:
+            payment_data = doc.to_dict()
+            payment_data['doc_id'] = doc.id
+            payment_history.append(payment_data)
+    except Exception as e:
+        flash(f"Error fetching payment history: {e}", "danger")
+
+    return render_template('subscription.html', payment_history=payment_history)
+
+@user_profile_bp.route('/cancel-subscription', methods=['POST'])
+@login_required
+def cancel_subscription():
+    try:
+        # Update subscription status in Firestore
+        db_firestore.collection('users').document(current_user.id).update({
+            'subscription_status': 'cancelled',
+            'subscription_cancelled_at': datetime.now()
+        })
+        
+        flash('Your subscription has been cancelled. It will remain active until the end of your current billing period.', 'success')
+    except Exception as e:
+        flash(f'Error cancelling subscription: {e}', 'danger')
+    
+    return redirect(url_for('user_profile.subscription'))

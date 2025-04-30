@@ -10,7 +10,7 @@ from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from app.utils.date_formater import format_datetime_filter, timestamp_to_date
 from app.utils.filesize_formater import format_filesize
-from app.models import db
+from app.utils.currency_formater import format_currency
 import pyrebase
 
 load_dotenv('.env')
@@ -47,9 +47,7 @@ def create_app(config_class=Config):
     app.jinja_env.filters['format_filesize'] = format_filesize
     app.jinja_env.filters['format_timestamp'] = timestamp_to_date
     app.jinja_env.filters['format_datetime'] = format_datetime_filter
-    
-    # Initialize SQLAlchemy
-    db.init_app(app)
+    app.jinja_env.filters['format_currency'] = format_currency
     
     # Initialize Firebase SDK
     firebase = pyrebase.initialize_app(app.config['FIREBASE_CONFIG'])
@@ -83,6 +81,7 @@ def create_app(config_class=Config):
 
     from app.search.routes import search_bp
     app.register_blueprint(search_bp)
+    
     from app.files_management.upload import upload_bp
     app.register_blueprint(upload_bp)
 
@@ -93,9 +92,13 @@ def create_app(config_class=Config):
     from app.admin.routes import admin_bp
     app.register_blueprint(admin_bp)
 
+    # Register payment blueprint
+    from app.payment.routes import payment_bp
+    app.register_blueprint(payment_bp)
+    
     return app
 
 @login_manager.user_loader
 def load_user(user_id):
     from app.models.user import User
-    return User.query.get(user_id)
+    return User.get(user_id)

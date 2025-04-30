@@ -1,0 +1,280 @@
+{% extends "base.html" %} {% block title %}Subscribe | Shware{% endblock %} {%
+block content %}
+<section class="subscription-section">
+  <h1 class="text-center mb-4">Premium</h1>
+  <p class="text-center subtitle mb-5">
+    Get started with a Shware Subscription that works for you.
+  </p>
+
+  <div class="subscription-plans">
+    <!-- Monthly Plan -->
+    <div class="plan-card">
+      <h2 class="plan-title">
+        Monthly <span class="billed-text">billed monthly</span>
+      </h2>
+      <div class="price-info">
+        <p class="previous-price">Down from 35.000đ/month.</p>
+        <p>
+          Our monthly plan grants access to all premium features, the best plan
+          for short-term subscribers.
+        </p>
+      </div>
+      <div class="price">
+        <span class="currency">đ</span>
+        <span class="amount">35.000</span>
+        <span class="period">/mo</span>
+      </div>
+      <p class="price-note">Prices are marked in VND</p>
+      <button
+        class="btn btn-dark w-100 subscribe-btn"
+        onclick="handlePayment('monthly')"
+      >
+        Subscribe
+      </button>
+    </div>
+
+    <!-- Yearly Plan -->
+    <div class="plan-card featured" , style="color: #212529">
+      <div class="most-popular">🌟 Most popular</div>
+      <h2 class="plan-title">
+        Yearly
+        <span class="billed-text" , style="color: #212529"
+          >billed yearly (159.000đ)</span
+        >
+      </h2>
+      <div class="price-info" , style="color: #212529">
+        <p class="previous-price" , style="color: #212529">
+          Our most popular plan previously sold for 259.000đ
+        </p>
+        <p>This plan saves you over 60% in comparison to the monthly plan.</p>
+      </div>
+      <div class="price" , style="color: #212529">
+        <span class="currency">đ</span>
+        <span class="amount">13.250</span>
+        <span class="period" , style="color: #212529">/mo</span>
+      </div>
+      <p class="price-note" , style="color: #212529">
+        Prices are marked in VND
+      </p>
+      <button
+        class="btn btn-dark w-100 subscribe-btn"
+        onclick="handlePayment('yearly')"
+      >
+        Subscribe
+      </button>
+    </div>
+  </div>
+</section>
+
+<style>
+  .subscription-section {
+    max-width: 1000px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+  }
+
+  .subscription-section h1 {
+    font-size: 1.8rem;
+  }
+
+  .subtitle {
+    font-size: 0.9rem;
+    color: var(--text-color);
+    opacity: 0.8;
+  }
+
+  .subscription-plans {
+    display: grid;
+    grid-template-columns: minmax(220px, 0.8fr) minmax(260px, 1fr);
+    gap: 1.5rem;
+    margin-top: 2rem;
+  }
+
+  .plan-card {
+    background-color: var(--card-bg);
+    border-radius: 12px;
+    padding: 1.5rem;
+    position: relative;
+    border: 1px solid var(--border-color);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+
+  .plan-card.featured {
+    background: linear-gradient(to bottom right, #ffe5b4, #ffd700);
+    border-color: #ffd700;
+    transform: scale(1.05);
+  }
+
+  /* Add different scale factors for hover */
+  .plan-card:hover {
+    transform: translateY(-5px) scale(1.02);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+  }
+
+  .plan-card.featured:hover {
+    transform: translateY(-5px) scale(1.07);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+  }
+
+  .most-popular {
+    position: absolute;
+    top: -12px;
+    right: 20px;
+    background-color: #fff;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  .plan-title {
+    font-size: 1.3rem;
+    margin-bottom: 1rem;
+    font-weight: 600;
+  }
+
+  .billed-text {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--text-color);
+    opacity: 0.7;
+    font-weight: normal;
+    margin-top: 0.2rem;
+  }
+
+  .price-info {
+    margin-bottom: 1.5rem;
+    font-size: 0.9rem;
+
+  .previous-price {
+    color: var(--text-color);
+    opacity: 0.7;
+    font-size: 0.8rem;
+    margin-bottom: 0.4rem;
+  }
+
+  .price {
+    font-size: 2rem;
+    font-weight: 600;
+    margin-bottom: 0.4rem;
+  }
+
+  .currency {
+    font-size: 1.2rem;
+    vertical-align: super;
+  }
+
+  .period {
+    font-size: 0.9rem;
+    color: var(--text-color);
+    opacity: 0.7;
+  }
+
+  .price-note {
+    font-size: 0.7rem;
+    color: var(--text-color);
+    opacity: 0.6;
+    margin-bottom: 1rem;
+  }
+
+  .subscribe-btn {
+    font-size: 1rem;
+    padding: 0.6rem;
+    border-radius: 6px;
+    transition: transform 0.2s ease;
+  }
+
+  .subscribe-btn:hover {
+    transform: translateY(-2px);
+  }
+
+  @media (max-width: 768px) {
+    .subscription-plans {
+      grid-template-columns: 1fr;
+    }
+
+    .plan-card {
+      max-width: 340px;
+      margin: 0 auto;
+    }
+  }
+</style>
+
+<script>
+  async function handlePayment(plan) {
+    const button = event.target;
+    const originalText = button.innerText;
+    const planPrices = {
+      monthly: 35000,
+      yearly: 159000,
+    };
+    const planDescriptions = {
+      monthly: "Monthly Subscription",
+      yearly: "Yearly Subscription",
+    };
+
+    try {
+      // Disable all buttons and show loading state
+      const buttons = document.querySelectorAll(".subscribe-btn");
+      buttons.forEach((btn) => (btn.disabled = true));
+      button.innerHTML =
+        '<span class="spinner-border spinner-border-sm me-2"></span>Đang xử lý...';
+
+      // Create payment request
+      const response = await fetch('{{ url_for("payment.create_payment") }}', {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": "{{ csrf_token() }}",
+        },
+        credentials: "include", // Important for session cookies
+        body: JSON.stringify({
+          amount: planPrices[plan],
+          description: planDescriptions[plan],
+          plan_type: plan,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(
+          errorData.error || `HTTP error! status: ${response.status}`
+        );
+      }
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Redirect to PayOS checkout page
+        window.location.href = data.checkout_url;
+      } else {
+        throw new Error(data.error || "Payment creation failed");
+      }
+    } catch (error) {
+      console.error("Payment error:", error);
+      alert("Có lỗi xảy ra: " + error.message);
+
+      // Reset button state
+      button.innerHTML = originalText;
+      const buttons = document.querySelectorAll(".subscribe-btn");
+      buttons.forEach((btn) => (btn.disabled = false));
+    }
+  }
+
+  // Check payment status on page load (for handling returns from payment page)
+  document.addEventListener("DOMContentLoaded", function () {
+    const urlParams = new URLSearchParams(window.location.search);
+    const status = urlParams.get("status");
+    const orderCode = urlParams.get("orderCode");
+
+    if (status === "success" && orderCode) {
+      // Redirect to success page
+      window.location.href = `{{ url_for("payment.payment_success") }}?orderCode=${orderCode}`;
+    } else if (status === "cancel" && orderCode) {
+      // Redirect to cancel page
+      window.location.href = `{{ url_for("payment.payment_cancel") }}?orderCode=${orderCode}`;
+    }
+  });
+</script>
+{% endblock %}

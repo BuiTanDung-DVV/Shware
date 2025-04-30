@@ -1,0 +1,296 @@
+{% extends "base.html" %}
+
+{% block styles %}
+<style>
+  .subscription-container {
+    max-width: 95%;
+    margin: 0rem auto;
+    padding: 0 1rem;
+  }
+
+  .subscription-card {
+    /* background-color: transparent; */
+    /* border: 1px solid var(--border-color); */
+    /* border-radius: 12px; */
+    /* box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); */
+    margin-bottom: 2rem;
+  }
+
+  .subscription-header {
+    background-color: var(--primary-color);
+    color: white;
+    padding: 1.5rem;
+    border-radius: 12px 12px 0 0;
+  }
+
+  .subscription-header h3 {
+    margin: 0;
+    font-weight: 600;
+  }
+
+  .subscription-body {
+    padding: 2rem;
+  }
+
+  .current-plan {
+    /* background-color: var(--light-color);
+    border-radius: 8px; */
+    /* padding: 1.5rem; */
+    margin-bottom: 2rem;
+  }
+
+  .plan-details {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+    margin-top: 1rem;
+  }
+
+  .plan-detail-item {
+    padding: 1rem;
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  }
+
+
+  .plan-detail-item h5 {
+    color: #212529;
+    margin-bottom: 0.5rem;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .plan-detail-item p {
+    margin: 0;
+    color: #212529;
+    font-size: 0.9rem;
+    font-weight: 500;
+  }
+
+  .subscription-actions {
+    margin: 2rem 0;
+  }
+
+  .action-buttons {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1rem;
+  }
+
+  .btn-upgrade {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+  }
+
+  .btn-upgrade:hover {
+    background-color: var(--primary-dark);
+    transform: translateY(-2px);
+  }
+
+  .btn-cancel {
+    background-color: var(--danger-color);
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+  }
+
+  .btn-cancel:hover {
+    background-color: var(--danger-dark);
+    transform: translateY(-2px);
+  }
+
+  .payment-history {
+    margin-top: 2rem;
+  }
+
+  .payment-history h4 {
+    color: var(--text-color);
+    margin-bottom: 1.5rem;
+    font-weight: 600;
+  }
+
+  .table {
+    background-color: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  }
+
+  .table thead {
+    background-color: var(--light-color);
+  }
+
+  .table th {
+    border: none;
+    padding: 1rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.6rem;
+    letter-spacing: 0.5px;
+  }
+
+  .table td {
+    padding: 1rem;
+    vertical-align: middle;
+  }
+
+  .badge {
+    padding: 0.5rem 0.75rem;
+    border-radius: 6px;
+    font-weight: 500;
+  }
+
+  .modal-content {
+    border-radius: 12px;
+    border: none;
+  }
+
+  .modal-header {
+    background-color: var(--primary-color);
+    color: white;
+    border-radius: 12px 12px 0 0;
+  }
+
+  .modal-title {
+    font-weight: 600;
+  }
+
+  .modal-body {
+    padding: 2rem;
+  }
+
+  .modal-footer {
+    padding: 1.5rem;
+    border-top: 1px solid var(--border-color);
+  }
+
+  @media (max-width: 768px) {
+    .plan-details {
+      grid-template-columns: 1fr;
+    }
+
+    .action-buttons {
+      flex-direction: column;
+    }
+
+    .btn-upgrade, .btn-cancel {
+      width: 100%;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="subscription-container">
+  <div class="subscription-card">
+    <!--div class="subscription-header">
+      <h3>Subscription Management</h3>
+    </div-->
+    <div class="subscription-body">
+      <div class="current-plan">
+        <h4>Current Plan</h4>
+        <div class="plan-details">
+          <div class="plan-detail-item">
+            <h5>Plan Type</h5>
+            <p>{{ current_user.subscription_type|title }}</p>
+          </div>
+          <div class="plan-detail-item">
+            <h5>Status</h5>
+            <span class="badge {% if current_user.subscription_status == 'active' %}bg-success{% elif current_user.subscription_status == 'expired' %}bg-danger{% else %}bg-secondary{% endif %}">
+              {{ current_user.subscription_status|title }}
+            </span>
+          </div>
+          <div class="plan-detail-item">
+            <h5>Start Date</h5>
+            <p>{{ current_user.subscription_start_date|format_datetime if current_user.subscription_start_date else 'N/A' }}</p>
+          </div>
+          <div class="plan-detail-item">
+            <h5>End Date</h5>
+            <p>{{ current_user.subscription_end_date|format_datetime if current_user.subscription_end_date else 'N/A' }}</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="subscription-actions">
+        <div class="action-buttons">
+          {% if current_user.subscription_status == 'active' %}
+            <a href="{{ url_for('payment.subscribe') }}" class="btn btn-upgrade">
+              <i class="fas fa-arrow-up"></i> Upgrade Plan
+            </a>
+            <button type="button" class="btn btn-cancel" data-bs-toggle="modal" data-bs-target="#cancelSubscriptionModal" style="color: #a13a3a">
+              <i class="fas fa-times" style="color: #a13a3a"></i> Cancel Subscription
+            </button>
+          {% else %}
+            <a href="{{ url_for('payment.subscribe') }}" class="btn btn-upgrade">
+              <i class="fas fa-plus"></i> Subscribe Now
+            </a>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="payment-history">
+        <h4>Payment History</h4>
+        <div class="table-responsive">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Amount</th>
+                <th>Plan</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for payment in payment_history %}
+              <tr>
+                <td>{{ payment.created_at|format_datetime }}</td>
+                <td>{{ payment.amount|format_currency }}</td>
+                <td>{{ payment.plan_type|title }}</td>
+                <td>
+                  <span class="badge {% if payment.status == 'success' %}bg-success{% elif payment.status == 'pending' %}bg-warning{% else %}bg-success{% endif %}">
+                    {{ payment.status|title }}
+                  </span>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Cancel Subscription Modal -->
+<div class="modal fade" id="cancelSubscriptionModal" tabindex="-1" aria-labelledby="cancelSubscriptionModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="cancelSubscriptionModalLabel">Cancel Subscription</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p>Are you sure you want to cancel your subscription?</p>
+        <p>Your subscription will remain active until the end of your current billing period.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        <form action="{{ url_for('user_profile.cancel_subscription') }}" method="POST">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+          <button type="submit" class="btn btn-danger">Cancel Subscription</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %} 

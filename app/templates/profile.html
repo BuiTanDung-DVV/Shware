@@ -311,8 +311,28 @@ block title %}User Profile{% endblock %} {% block styles %}
             <strong>Member Since:</strong> {{ user_info.registration_date |
             format_timestamp }}
           </p>
+          <div class="col" style="margin-top: 2rem">
+            <p>
+              <strong>Subscription:</strong>
+              <span
+                class="badge {% if current_user.subscription_status == 'active' %}bg-success{% elif current_user.subscription_status == 'expired' %}bg-danger{% else %}bg-secondary{% endif %}"
+              >
+                {{ current_user.subscription_type|title }}
+              </span>
+            </p>
+            <p>
+              <strong>Valid Until:</strong> {{
+              current_user.subscription_end_date|format_datetime if
+              current_user.subscription_end_date else 'N/A' }}
+            </p>
+            <a
+              href="{{ url_for('user_profile.subscription') }}"
+              class="btn btn-primary"
+              >Manage Subscription</a
+            >
+          </div>
         </div>
-        <div class="profile-update-form">
+        <div class="profile-update-form" style="color: var(--text-color)">
           <h3>Update Profile</h3>
           <form
             method="POST"
@@ -326,7 +346,7 @@ block title %}User Profile{% endblock %} {% block styles %}
             <hr />
             {% if has_password_provider %}
             <h4>Change Password</h4>
-            <p class="text-muted small">
+            <p class="text small">
               Leave blank if you don't want to change your password.
             </p>
             <div id="current_password_wrapper">

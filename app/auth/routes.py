@@ -6,7 +6,7 @@ from flask_wtf.csrf import validate_csrf
 import firebase_admin
 from firebase_admin import auth as firebase_auth, credentials, firestore
 from app.auth.forms import LoginForm, RegistrationForm
-from app.models.user import User, db
+from app.models.user import User
 from app.config import Config
 from datetime import datetime
 # from app import limiter
@@ -38,7 +38,7 @@ def get_default_profile_pic_url():
 # --- End Helper Function ---
 
 # --Helper Function to Sync User Data--
-def sync_user_to_local_and_firestore(uid, email, display_name, profile_pic_url, auth_provider):
+def sync_user_to_firestore(uid, email, display_name, profile_pic_url, auth_provider):
     # First check existing data in Firestore
     firestore_db = firestore.client()
     user_doc_ref = firestore_db.collection('users').document(uid)
@@ -55,28 +55,6 @@ def sync_user_to_local_and_firestore(uid, email, display_name, profile_pic_url, 
             role = user_record.custom_claims.get('role', 'user') if user_record.custom_claims else 'user'
         except:
             role = 'user'
-
-    # Update or create user in SQL database
-    user = User.query.filter_by(id=uid).first()
-    if not user:
-        user = User.query.filter_by(email=email).first()
-        if user:
-            # Update existing user found by email
-            user.id = uid
-            user.name = display_name
-            user.profile_pic = profile_pic_url
-            user.role = role
-        else:
-            # Create new user
-            user = User(id_=uid, name=display_name, email=email, profile_pic=profile_pic_url, role=role)
-            db.session.add(user)
-    else:
-        # Update existing user if needed
-        if user.profile_pic != profile_pic_url:
-            user.profile_pic = profile_pic_url
-        if user.name != display_name:
-            user.name = display_name
-    db.session.commit()
 
     # Update Firestore
     if user_doc.exists:
@@ -95,13 +73,13 @@ def sync_user_to_local_and_firestore(uid, email, display_name, profile_pic_url, 
             'name': display_name,
             'email': email,
             'profile_pic': profile_pic_url,
-            'created_at': user.registration_date or datetime.now(),
+            'created_at': datetime.now(),
             'last_login': datetime.now(),
             'auth_provider': auth_provider,
             'role': role
         })
 
-    return user
+    return User(id_=uid, name=display_name, email=email, profile_pic=profile_pic_url, role=role)
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
 # @limiter.limit("5 per minute")
@@ -139,7 +117,7 @@ def handle_firebase_auth():
         auth_provider = decoded_token.get('firebase', {}).get('sign_in_provider', 'unknown')
 
         # Tái sử dụng logic xử lý người dùng
-        user = sync_user_to_local_and_firestore(uid, email, display_name, profile_pic_url, auth_provider)
+        user = sync_user_to_firestore(uid, email, display_name, profile_pic_url, auth_provider)
         login_user(user)
 
         return json.jsonify({'success': True}), 200
@@ -172,17 +150,6 @@ def register():
                 photo_url=profile_pic_url
             )
 
-            # Create user in database with default role='user'
-            user = User(
-                id_=user_record.uid,
-                name=username,
-                email=email,
-                profile_pic=profile_pic_url,
-                role='user'  # Set default role
-            )
-            db.session.add(user)
-            db.session.commit()
-
             # Create user in Firestore
             firestore_db = firestore.client()
             firestore_db.collection('users').document(user_record.uid).set({
@@ -199,6 +166,7 @@ def register():
             return redirect(url_for('auth.login'))
         except Exception as e:
             flash(f'Registration failed: {str(e)}', 'danger')
+            return redirect(url_for('auth.register'))
 
     return render_template('register.html', form=form)
 

@@ -3,6 +3,7 @@
   --primary-color: #0d6efd;
   --secondary-color: #20c997;
   --text-color: #212529;
+  --text-muted-color: #6c757d;
   --bg-color: #f4f6f9;
   --card-bg: white;
   --light-color: #f8f9fa;
@@ -26,6 +27,7 @@ body.dark-theme {
   --primary-color: #4dabf7;
   --secondary-color: #48d1cc;
   --text-color: #e0e0e0;
+  --text-muted-color: #e0e0e0;
   --bg-color: #1a1a1a;
   --card-bg: #2c2c2c;
   --light-color: #3a3a3a;
@@ -783,12 +785,6 @@ footer p {
 }
 .profile-update-form .form-group {
   margin-bottom: 20px;
-}
-.profile-update-form .text-muted {
-  color: #6c757d;
-}
-body.dark-theme .profile-update-form .text-muted {
-  color: #adb5bd;
 }
 
 /* File Detail Page Styles */

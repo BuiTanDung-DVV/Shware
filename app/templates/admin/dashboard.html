@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+
+{% block styles %}
+<style>
+  .dashboard-container {
+    max-width: 1200px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+  }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+  }
+
+  .stat-card {
+    background-color: white;
+    border-radius: 8px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  }
+
+  .stat-card h3 {
+    color: var(--text-color);
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 0.5rem;
+  }
+
+  .stat-card .value {
+    font-size: 2rem;
+    font-weight: 600;
+    color: var(--primary-color);
+    margin: 0;
+  }
+
+  .chart-container {
+    background-color: white;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  }
+
+  .chart-container h2 {
+    color: var(--text-color);
+    font-size: 1.2rem;
+    margin-bottom: 1.5rem;
+    font-weight: 600;
+  }
+
+  .chart-wrapper {
+    position: relative;
+    height: 400px;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+  <h1>Admin Dashboard</h1>
+  
+  <div class="stats-grid">
+    <div class="stat-card">
+      <h3>Total Users</h3>
+      <p class="value">{{ stats.total_users }}</p>
+    </div>
+    <div class="stat-card">
+      <h3>Active Subscriptions</h3>
+      <p class="value">{{ stats.active_subscriptions }}</p>
+    </div>
+    <div class="stat-card">
+      <h3>Total Revenue</h3>
+      <p class="value">{{ stats.total_revenue|format_currency }}</p>
+    </div>
+    <div class="stat-card">
+      <h3>New Users (Last 30 Days)</h3>
+      <p class="value">{{ stats.new_users_last_30_days }}</p>
+    </div>
+  </div>
+
+  <div class="chart-container">
+    <h2>Subscription Trends</h2>
+    <div class="chart-wrapper">
+      <canvas id="subscriptionTrendChart"></canvas>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  // Fetch subscription trend data
+  fetch('/admin/api/subscription-trend')
+    .then(response => response.json())
+    .then(data => {
+      const ctx = document.getElementById('subscriptionTrendChart').getContext('2d');
+      new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: data.dates,
+          datasets: [
+            {
+              label: 'New Subscriptions',
+              data: data.new_subscriptions,
+              borderColor: 'rgb(75, 192, 192)',
+              tension: 0.1,
+              fill: false
+            },
+            {
+              label: 'Active Subscriptions',
+              data: data.active_subscriptions,
+              borderColor: 'rgb(255, 99, 132)',
+              tension: 0.1,
+              fill: false
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'top',
+            },
+            title: {
+              display: true,
+              text: 'Subscription Trends (Last 30 Days)'
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: {
+                stepSize: 1
+              }
+            }
+          }
+        }
+      });
+    })
+    .catch(error => console.error('Error fetching subscription trend data:', error));
+</script>
+{% endblock %} 

@@ -113,6 +113,14 @@
                 id="user-menu"
                 aria-labelledby="user-menu-button"
               >
+                {% if current_user.role != 'member' %}
+                <a
+                  href="{{ url_for('payment.subscribe') }}"
+                  class="dropdown-item"
+                >
+                  👑 Join Us
+                </a>
+                {% endif %}
                 <a
                   href="{{ url_for('user_profile.profile') }}"
                   class="dropdown-item"

@@ -1,27 +1,30 @@
-import datetime
+from datetime import datetime
 
-def format_datetime_filter(value, format='%b %d, %Y %H:%M'):
-    """Formats an ISO datetime string into a more readable format."""
-    if not value:
-        return ""
+def format_datetime_filter(dt):
+    """Format datetime to show only date"""
+    if dt is None:
+        return "N/A"
     try:
-        # Attempt to parse the ISO format string
-        dt_object = datetime.datetime.fromisoformat(value)
-        return dt_object.strftime(format)
+        if isinstance(dt, str):
+            # If it's a string, try to parse it
+            dt = datetime.fromisoformat(dt.replace('Z', '+00:00'))
+        elif isinstance(dt, (int, float)):
+            # If it's a timestamp
+            dt = datetime.fromtimestamp(dt)
+        
+        # Format as date only (YYYY-MM-DD)
+        return dt.strftime('%Y/%m/%d')
     except (ValueError, TypeError):
-        # Handle cases where the value is not a valid ISO string or None
-        # You might want to log this error or return a default value
-        return str(value) # Return original value or some placeholder
+        return "N/A"
 
 def timestamp_to_date(timestamp):
-    """Convert millisecond timestamp to formatted date string"""
-    if not timestamp:
-        return 'N/A'
+    """Convert timestamp to date string"""
+    if timestamp is None:
+        return "N/A"
     try:
-        # Convert milliseconds to seconds if needed
-        if isinstance(timestamp, int) and len(str(timestamp)) > 10:
-            timestamp = timestamp / 1000
-        dt = datetime.datetime.fromtimestamp(timestamp)
-        return dt.strftime('%d/%m/%Y %H:%M')
-    except:
-        return 'N/A'
+        # Convert timestamp to datetime
+        dt = datetime.fromtimestamp(timestamp)
+        # Format as date only (YYYY-MM-DD)
+        return dt.strftime('%Y/%m/%d')
+    except (ValueError, TypeError):
+        return "N/A"

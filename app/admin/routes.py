@@ -307,76 +307,6 @@ def manage_file():
         print(f"Error in manage_file: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
-# @admin_bp.route('/posts')
-# @login_required
-# @admin_required
-# def manage_posts():
-#     try:
-#         posts = []
-#         posts_ref = db_firestore.collection('posts')\
-#             .order_by('created_at', direction=firestore.Query.DESCENDING)\
-#             .stream()
-        
-#         for doc in posts_ref:
-#             post_data = doc.to_dict()
-#             post_data['id'] = doc.id
-#             posts.append(post_data)
-            
-#         return render_template('admin_posts.html', posts=posts)
-#     except Exception as e:
-#         flash(f'Error loading posts: {str(e)}', 'danger')
-#         return redirect(url_for('admin.dashboard'))
-
-# @admin_bp.route('/manage_post', methods=['POST'])
-# @login_required
-# @admin_required
-# def manage_post():
-#     try:
-#         data = request.get_json()
-#         post_id = data.get('postId')
-#         action = data.get('action')
-
-#         if action == 'delete':
-#             # Delete from Firestore
-#             post_ref = db_firestore.collection('posts').document(post_id)
-#             post_data = post_ref.get().to_dict()
-            
-#             # Delete associated files if any
-#             if post_data and 'file_info' in post_data:
-#                 try:
-#                     service = build('drive', 'v3', credentials=creds)
-#                     for file_info in post_data['file_info']:
-#                         if 'drive_id' in file_info:
-#                             service.files().delete(fileId=file_info['drive_id']).execute()
-#                 except Exception as e:
-#                     print(f"Error deleting post files from Drive: {e}")
-            
-#             # Finally delete the post document
-#             post_ref.delete()
-            
-#             return jsonify({'success': True})
-            
-#         elif action == 'toggleVisibility':
-#             visibility = data.get('visibility', False)
-#             db_firestore.collection('posts').document(post_id).update({
-#                 'is_public': visibility
-#             })
-#             return jsonify({'success': True})
-            
-#         elif action == 'updateFeatured':
-#             featured = data.get('featured', False)
-#             db_firestore.collection('posts').document(post_id).update({
-#                 'featured': featured
-#             })
-#             return jsonify({'success': True})
-            
-#         else:
-#             return jsonify({'success': False, 'error': 'Invalid action'}), 400
-
-#     except Exception as e:
-#         return jsonify({'success': False, 'error': str(e)}), 500
-
-
 @admin_bp.route('/stats')
 @login_required
 @admin_required
@@ -408,7 +338,7 @@ def get_stats():
         # Đếm số user active trong 30 ngày
         thirty_days_ago = datetime.now() - timedelta(days=30)
         active_users_count = db_firestore.collection('users')\
-            .where('last_login', '>', thirty_days_ago)\
+            .where(filter=firestore.FieldFilter('last_login', '>', thirty_days_ago))\
             .count().get()
         active_users = active_users_count[0][0].value if active_users_count else 0
 
@@ -417,7 +347,7 @@ def get_stats():
         monthly_counts = {}
         
         users_ref = db_firestore.collection('users')\
-            .where('created_at', '>', six_months_ago)\
+            .where(filter=firestore.FieldFilter('created_at', '>', six_months_ago))\
             .order_by('created_at')\
             .stream()
             
@@ -470,3 +400,109 @@ def get_stats():
     except Exception as e:
         print(f"Error in get_stats: {str(e)}")
         return jsonify(default_response), 500
+
+@admin_bp.route('/subscription-trend')
+@login_required
+def subscription_trend():
+    try:
+        # Get the last 30 days of data
+        end_date = datetime.now().replace(tzinfo=None)  # Make timezone-naive
+        start_date = end_date - timedelta(days=30)
+        
+        print(f"\n=== Subscription Trend Analysis ===")
+        print(f"Date Range: {start_date.strftime('%Y-%m-%d')} to {end_date.strftime('%Y-%m-%d')}")
+        
+        # Query Firestore for subscription data
+        users_ref = db_firestore.collection('users')
+        users = users_ref.get()
+        print(f"Total users found: {len(users)}")
+        
+        # Initialize daily counts
+        daily_counts = {}
+        current_date = start_date
+        while current_date <= end_date:
+            daily_counts[current_date.strftime('%Y-%m-%d')] = {
+                'new_subscriptions': 0,
+                'active_subscriptions': 0,
+                'cancelled_subscriptions': 0
+            }
+            current_date += timedelta(days=1)
+        
+        # Count subscriptions
+        for user in users:
+            user_data = user.to_dict()
+            subscription_start = user_data.get('subscription_start_date')
+            subscription_end = user_data.get('subscription_end_date')
+            subscription_status = user_data.get('subscription_status', '')
+            
+            if subscription_start:
+                # Convert Firestore timestamp to datetime
+                if hasattr(subscription_start, 'timestamp'):
+                    start_date_obj = subscription_start.replace(tzinfo=None)  # Make timezone-naive
+                else:
+                    start_date_obj = datetime.fromtimestamp(subscription_start)
+                start_date_str = start_date_obj.strftime('%Y-%m-%d')
+                if start_date_str in daily_counts:
+                    daily_counts[start_date_str]['new_subscriptions'] += 1
+            
+            if subscription_start and subscription_end:
+                # Convert Firestore timestamps to datetime
+                if hasattr(subscription_start, 'timestamp'):
+                    current_date = subscription_start.replace(tzinfo=None)  # Make timezone-naive
+                else:
+                    current_date = datetime.fromtimestamp(subscription_start)
+                
+                if hasattr(subscription_end, 'timestamp'):
+                    end_date_obj = subscription_end.replace(tzinfo=None)  # Make timezone-naive
+                else:
+                    end_date_obj = datetime.fromtimestamp(subscription_end)
+                
+                while current_date <= end_date_obj and current_date <= end_date:
+                    date_str = current_date.strftime('%Y-%m-%d')
+                    if date_str in daily_counts:
+                        daily_counts[date_str]['active_subscriptions'] += 1
+                    current_date += timedelta(days=1)
+            
+            # Count cancelled subscriptions
+            if subscription_status == 'cancelled':
+                if subscription_end:
+                    # Convert Firestore timestamp to datetime
+                    if hasattr(subscription_end, 'timestamp'):
+                        cancel_date = subscription_end.replace(tzinfo=None)  # Make timezone-naive
+                    else:
+                        cancel_date = datetime.fromtimestamp(subscription_end)
+                    cancel_date_str = cancel_date.strftime('%Y-%m-%d')
+                    if cancel_date_str in daily_counts:
+                        daily_counts[cancel_date_str]['cancelled_subscriptions'] += 1
+        
+        # Format data for Chart.js
+        dates = list(daily_counts.keys())
+        new_subs = [daily_counts[date]['new_subscriptions'] for date in dates]
+        active_subs = [daily_counts[date]['active_subscriptions'] for date in dates]
+        cancelled_subs = [daily_counts[date]['cancelled_subscriptions'] for date in dates]
+        
+        # Print detailed statistics
+        print("\nDaily Statistics:")
+        for date in dates:
+            stats = daily_counts[date]
+            if stats['new_subscriptions'] > 0 or stats['active_subscriptions'] > 0 or stats['cancelled_subscriptions'] > 0:
+                print(f"{date}:")
+                print(f"  New: {stats['new_subscriptions']}")
+                print(f"  Active: {stats['active_subscriptions']}")
+                print(f"  Cancelled: {stats['cancelled_subscriptions']}")
+        
+        print("\nSummary:")
+        print(f"Total new subscriptions: {sum(new_subs)}")
+        print(f"Total active subscriptions: {sum(active_subs)}")
+        print(f"Total cancelled subscriptions: {sum(cancelled_subs)}")
+        print("===============================\n")
+        
+        return jsonify({
+            'dates': dates,
+            'new_subscriptions': new_subs,
+            'active_subscriptions': active_subs,
+            'cancelled_subscriptions': cancelled_subs
+        })
+    except Exception as e:
+        print(f"Error in subscription_trend: {str(e)}")
+        return jsonify({'error': str(e)}), 500
