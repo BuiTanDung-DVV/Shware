@@ -40,73 +40,110 @@ def dashboard():
 @login_required
 @admin_required
 def manage_users():
-    page = request.args.get('page', 1, type=int)
-    per_page = 10
-    
     try:
-        # Lấy tổng số người dùng từ Firestore
-        users_ref = db_firestore.collection('users')
-        total_users = len(list(users_ref.stream()))
-        total_pages = ceil(total_users / per_page)
-        
-        # Đảm bảo page nằm trong khoảng hợp lệ
-        if page < 1:
+        # Lấy tham số trang và đảm bảo nó là số nguyên dương
+        try:
+            page = int(request.args.get('page', 1))
+            if page < 1:
+                page = 1
+        except (ValueError, TypeError):
             page = 1
-        elif page > total_pages and total_pages > 0:
-            page = total_pages
+            
+        per_page = 10
         
-        # Lấy danh sách người dùng cho trang hiện tại
-        users = []
-        users_query = users_ref.order_by('created_at', direction=firestore.Query.DESCENDING)\
-            .offset((page - 1) * per_page)\
-            .limit(per_page)
+        # Lấy tổng số người dùng từ Firestore
+        try:
+            users_ref = db_firestore.collection('users')
+            users_stream = users_ref.stream()
+            total_users = sum(1 for _ in users_stream)
+            total_pages = ceil(total_users / per_page) if total_users > 0 else 1
             
-        for doc in users_query.stream():
-            user_data = doc.to_dict()
-            user_data['id'] = doc.id
+            # Đảm bảo page nằm trong khoảng hợp lệ
+            page = min(page, total_pages)
             
-            # Lấy thêm thông tin từ Firebase Auth
+            # Lấy danh sách người dùng cho trang hiện tại
+            users = []
+            users_query = users_ref.order_by('created_at', direction=firestore.Query.DESCENDING)\
+                .offset((page - 1) * per_page)\
+                .limit(per_page)
+                
+            # Lấy danh sách user IDs để batch lookup
+            user_ids = []
+            for doc in users_query.stream():
+                try:
+                    user_data = doc.to_dict()
+                    user_data['id'] = doc.id
+                    user_ids.append(doc.id)
+                    users.append(user_data)
+                except Exception as doc_error:
+                    print(f"Error processing document {doc.id}: {str(doc_error)}")
+                    continue
+            
+            # Batch lookup user info from Firebase Auth
             try:
-                firebase_user = firebase_auth.get_user(doc.id)
-                user_data['disabled'] = firebase_user.disabled
-                user_data['email'] = firebase_user.email
-                user_data['display_name'] = firebase_user.display_name
-                user_data['photo_url'] = firebase_user.photo_url
-                user_data['registration_date'] = firebase_user.user_metadata.creation_timestamp
-            except:
-                user_data['disabled'] = False
-                
-            users.append(user_data)
+                if user_ids:
+                    firebase_users = firebase_auth.get_users(user_ids)
+                    user_info_map = {user.uid: user for user in firebase_users.users}
+                    
+                    # Update user data with Firebase Auth info
+                    for user in users:
+                        if user['id'] in user_info_map:
+                            firebase_user = user_info_map[user['id']]
+                            user['disabled'] = firebase_user.disabled
+                            user['email'] = firebase_user.email
+                            user['display_name'] = firebase_user.name
+                            user['photo_url'] = firebase_user.photo_url
+                            user['registration_date'] = firebase_user.user_metadata.creation_timestamp
+                        else:
+                            user['disabled'] = False
+                            user['email'] = user.get('email', '')
+                            user['display_name'] = user.get('name', '')
+                            user['photo_url'] = user.get('profile_pic', '')
+                            user['registration_date'] = user.get('created_at', None)
+            except Exception as auth_error:
+                print(f"Error getting Firebase Auth data: {str(auth_error)}")
+                # If Firebase Auth lookup fails, use Firestore data only
+                for user in users:
+                    user['disabled'] = False
+                    user['email'] = user.get('email', '')
+                    user['display_name'] = user.get('name', '')
+                    user['photo_url'] = user.get('profile_pic', '')
+                    user['registration_date'] = user.get('created_at', None)
+                    
+            # Tính toán các thông số cho phân trang
+            has_prev = page > 1
+            has_next = page < total_pages
+            prev_page = page - 1 if has_prev else None
+            next_page = page + 1 if has_next else None
             
-        # Tính toán các thông số cho phân trang
-        has_prev = page > 1
-        has_next = page < total_pages
-        prev_page = page - 1 if has_prev else None
-        next_page = page + 1 if has_next else None
-        
-        # Tạo danh sách các số trang để hiển thị
-        pages = []
-        if total_pages <= 7:
-            pages = list(range(1, total_pages + 1))
-        else:
-            if page <= 4:
-                pages = list(range(1, 6)) + ['...', total_pages]
-            elif page >= total_pages - 3:
-                pages = [1, '...'] + list(range(total_pages - 4, total_pages + 1))
+            # Tạo danh sách các số trang để hiển thị
+            pages = []
+            if total_pages <= 7:
+                pages = list(range(1, total_pages + 1))
             else:
-                pages = [1, '...'] + list(range(page - 1, page + 2)) + ['...', total_pages]
-                
-        return render_template('admin_users.html', 
-                           users=users,
-                           page=page,
-                           total_pages=total_pages,
-                           has_prev=has_prev,
-                           has_next=has_next,
-                           prev_page=prev_page,
-                           next_page=next_page,
-                           pages=pages)
-                           
+                if page <= 4:
+                    pages = list(range(1, 6)) + ['...', total_pages]
+                elif page >= total_pages - 3:
+                    pages = [1, '...'] + list(range(total_pages - 4, total_pages + 1))
+                else:
+                    pages = [1, '...'] + list(range(page - 1, page + 2)) + ['...', total_pages]
+                    
+            return render_template('admin_users.html', 
+                               users=users,
+                               page=page,
+                               total_pages=total_pages,
+                               has_prev=has_prev,
+                               has_next=has_next,
+                               prev_page=prev_page,
+                               next_page=next_page,
+                               pages=pages)
+                               
+        except Exception as firestore_error:
+            print(f"Firestore error: {str(firestore_error)}")
+            raise firestore_error
+            
     except Exception as e:
+        print(f"General error: {str(e)}")
         flash(f'Lỗi khi tải danh sách người dùng: {str(e)}', 'danger')
         return redirect(url_for('admin.dashboard'))
 

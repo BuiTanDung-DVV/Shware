@@ -17,9 +17,9 @@ def search():
     sort_direction = request.args.get('sort_direction', 'desc')
     tag_filter = request.args.get('tag')
     file_type_filter = request.args.get('file_type')
-    
+
     # Danh sách các trường hợp lệ
-    valid_sort_fields = ['title', 'author', 'file_type', 'file_size', 'upload_date']
+    valid_sort_fields = ['title', 'author', 'file_type', 'file_size', 'upload_date', 'avg_rating']
     if sort_by not in valid_sort_fields:
         sort_by = 'upload_date'
 
@@ -42,6 +42,7 @@ def search():
         # Thêm lọc theo file_type nếu có
         if file_type_filter:
             base_query = base_query.where(filter=firestore.FieldFilter('file_type', '==', file_type_filter))
+            
 
         # Thêm sắp xếp
         direction = firestore.Query.DESCENDING if sort_direction == 'desc' else firestore.Query.ASCENDING

@@ -88,7 +88,7 @@
                 <table class="admin-table">
                     <thead>
                         <tr>
-                            <th style="width: 50px;"></th>
+                            <th style="width: 45px;"></th>
                             <th>Tên người dùng</th>
                             <th>Email</th>
                             <th>Vai trò</th>
@@ -106,10 +106,10 @@
                                      alt="{{ user.display_name }}'s avatar">
                             </td>
                             <td>
-                                <div class="fw-bold">{{ user.display_name or user.email }}</div>
+                                <div class="fw-bold">{{ user.display_name [:20]or user.email [:20]}}</div>
                                 <span class="user-id-text">ID: {{ user.id[:8] }}...</span>
                             </td>
-                            <td>{{ user.email }}</td>
+                            <td>{{ user.email [:30]}}</td>
                             <td>
                                 <select class="admin-select role-select w-auto" 
                                         {% if user.email == current_user.email %}disabled{% endif %}>
@@ -137,7 +137,7 @@
                             </td>
                             <td>
                                 {% if user.registration_date %}
-                                <div>{{ user.registration_date| format_timestamp }}</div>
+                                <div>{{ user.registration_date| format_datetime }}</div>
                                 {% else %}
                                 N/A
                                 {% endif %}

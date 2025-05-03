@@ -43,7 +43,7 @@
             text-overflow: ellipsis;
             max-width: 0;
             padding: 12px;
-            border-bottom: 1px solid #dee2e6;s
+            border-bottom: 1px solid #dee2e6;
           }
           /* Style cho header */
           .table thead th {
@@ -269,6 +269,12 @@
                 %}checked{%
                 endif
                 %}
+                {%
+                if
+                file.approve == false
+                %}disabled{%
+                endif
+                %}
                 onchange="toggleVisibility('{{ file.id }}', this.checked)"
               />
             </div>
@@ -435,6 +441,16 @@
       .then((data) => {
         if (!data.success) {
           throw new Error(data.error || "Unknown error occurred");
+        }
+        // Update visibility toggle state
+        const visibilityToggle = document.querySelector(
+          `tr[data-file-id="${fileId}"] .visibility-toggle`
+        );
+        if (visibilityToggle) {
+          visibilityToggle.disabled = !approved;
+          if (!approved) {
+            visibilityToggle.checked = false;
+          }
         }
       })
       .catch((error) => {
