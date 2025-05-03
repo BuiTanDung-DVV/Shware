@@ -61,8 +61,30 @@ block title %}User Profile{% endblock %} {% block styles %}
     text-decoration: none;
   }
 
+  .file-card-title-group {
+    display: flex;
+    gap: 10px;
+  }
+
   .file-card-title:hover {
     text-decoration: underline;
+  }
+
+  .file-card-status {
+    font-size: 0.85em;
+    color: indigo;
+    border-radius: 30px;
+    padding: 3px 5px;
+    opacity: 0.7;
+    margin-bottom: 10px;
+  }
+
+  .file-card-status.approved {
+    background-color: var(--success-color);
+  }
+
+  .file-card-status.pending {
+    background-color: var(--warning-color);
   }
 
   /* Thông tin meta của file */
@@ -237,6 +259,14 @@ block title %}User Profile{% endblock %} {% block styles %}
     color: var(--text-color);
   }
 
+  /* Responsive adjustments */
+  @media (max-width: 992px) {
+    .tags-wrapper {
+      grid-template-columns: repeat(3, minmax(130px, 1fr));
+      grid-auto-columns: minmax(130px, 1fr);
+    }
+  }
+
   /* Responsive */
   @media (max-width: 768px) {
     .profile-grid {
@@ -360,7 +390,7 @@ block title %}User Profile{% endblock %} {% block styles %}
             </div>
             {% else %}
             <h4>Password Management</h4>
-            <p class="text-muted small">
+            <p class="text small">
               You are logged in using a third-party provider (like Google).
             </p>
             {% endif %}
@@ -392,12 +422,18 @@ block title %}User Profile{% endblock %} {% block styles %}
             />
           </div>
           <div class="file-card-content">
-            <a
-              href="{{ url_for('files.file_detail', doc_id=file.doc_id) }}"
-              class="file-card-title"
-            >
-              {{ file.title }}
-            </a>
+            <div class="file-card-title-group">
+              <a
+                href="{{ url_for('files.file_detail', doc_id=file.doc_id) }}"
+                class="file-card-title"
+              >
+                {{ file.title }}
+              </a>
+              <div class="file-card-status {% if file.approve == true %}approved{% else %}pending{% endif %}">
+                {% if file.approve == true %}Approved{% else %}Pending{% endif %}
+              </div>
+            </div>
+            
             <div class="file-card-meta">
               <span class="file-card-date"
                 >{{ file.upload_date | format_datetime }}</span
@@ -427,7 +463,7 @@ block title %}User Profile{% endblock %} {% block styles %}
 
             <div class="file-card-actions">
               <a
-                href="#"
+                href="{{ url_for('upload.upload_file', doc_id=file.doc_id) }}"
                 class="btn btn-sm btn-outline-secondary action-btn"
                 title="Edit"
               >

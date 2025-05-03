@@ -68,6 +68,7 @@ def create_app(config_class=Config):
     # Initialize Flask-Login
     login_manager.init_app(app)
     login_manager.login_view = 'auth.login'
+    login_manager.login_message = ''
     
     # Register blueprints
     from app.auth.routes import auth_bp

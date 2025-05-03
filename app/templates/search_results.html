@@ -152,9 +152,9 @@
       rel="stylesheet"
       href="{{ url_for('static', filename='home.css') }}"
     />
-<div class="container mt-5">
+<div class="container mt-1">
     <div class="search-header">
-        <h2 class="mb-0">🔍 Kết quả tìm kiếm cho: "{{ query }}"</h2>
+        <h4 class="mb-0">🔍 Kết quả tìm kiếm cho: "{{ query }}"</h4>
         <div class="search-controls">
             <div class="filter-controls">
                 {% if current_file_type or current_tag or sort_by != 'upload_date' or sort_direction != 'desc' %}
@@ -254,7 +254,7 @@
     </div>
     {% else %}
         {% if query %}
-        <div class="alert alert-info text-center fs-5 mt-4">
+        <div class="alert alert-info text-center fs-6 mt-4">
             Không tìm thấy tệp nào phù hợp với tìm kiếm của bạn.
         </div>
         {% endif %}

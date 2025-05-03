@@ -1,9 +1,9 @@
 {% extends 'base.html' %} {% block content %}
 <main>
   <div class="auth-form">
-    <h2>🚀 Tải lên File</h2>
+    <h2>{% if file_data %}✏️ Chỉnh sửa File{% else %}🚀 Tải lên File{% endif %}</h2>
     <form
-      action="{{ url_for('upload.upload_file') }}"
+      action="{{ url_for('upload.upload_file', doc_id=file_data.doc_id if file_data else '') }}"
       method="post"
       enctype="multipart/form-data"
       id="uploadForm"
@@ -23,8 +23,11 @@
 
       <!-- File Upload -->
       <div class="form-group">
-        <label for="file">Chọn tệp (.zip, .rar) *</label>
-        <input type="file" id="file" name="file" accept=".zip, .rar" required />
+        <label for="file">Chọn tệp (.zip, .rar) {% if not file_data %}*{% endif %}</label>
+        <input type="file" id="file" name="file" accept=".zip, .rar" {% if not file_data %}required{% endif %} />
+        {% if file_data %}
+        <small class="form-text">Để trống nếu không muốn thay đổi file</small>
+        {% endif %}
       </div>
 
       <!-- Thumbnail Upload -->
@@ -33,7 +36,7 @@
         <div class="thumbnail-preview-container">
           <img
             id="thumbnail-preview"
-            src="/static/images/default-thumbnail.png"
+            src="{{ file_data.thumbnail_url if file_data else '/static/images/default-thumbnail.png' }}"
             alt="Preview"
           />
         </div>
@@ -52,11 +55,12 @@
           name="title"
           placeholder="Nhập tiêu đề tệp"
           required
+          value="{{ file_data.title if file_data else '' }}"
         />
       </div>
 
       <!-- Author - Auto-filled and readonly -->
-      <div class="form-group">
+      <!--div class="form-group">
         <label for="author">Tác giả</label>
         <input
           type="text"
@@ -66,7 +70,7 @@
           readonly
         />
         <small class="form-text">Tự động lấy từ tài khoản của bạn</small>
-      </div>
+      </div-->
 
       <!-- Description -->
       <div class="form-group">
@@ -74,25 +78,25 @@
         <textarea
           id="description"
           name="description"
-          rows="3"
           placeholder="Nhập mô tả tệp"
           required
-        ></textarea>
+        >{{ file_data.description if file_data else '' }}</textarea>
       </div>
 
-      <!-- Tags as checkboxes - Dynamic from Firestore -->
+      <!-- Tags -->
       <div class="form-group">
         <label>Thẻ (chọn ít nhất một) *</label>
         <div class="tags-container">
           <div class="tags-wrapper">
-            {% for tag in all_tags %}
+          {% for tag in all_tags %}
             <div class="tag-item">
-              <input
-                type="checkbox"
-                id="tag-{{ tag|lower|replace(' ', '') }}"
-                name="tags"
-                value="{{ tag }}"
-              />
+            <input
+              type="checkbox"
+              id="tag-{{ tag }}"
+              name="tags"
+              value="{{ tag }}"
+              {% if file_data and tag in file_data.tags %}checked{% endif %}
+            />
               <label for="tag-{{ tag|lower|replace(' ', '') }}"
                 >{{ tag }}</label
               >
@@ -115,8 +119,11 @@
       </div>
 
       <!-- Submit Button -->
-      <div class="form-actions">
-        <button type="submit" class="btn btn-primary">📤 Tải lên</button>
+      <div class="form-group" style="display: flex; justify-content: center; gap: 10px; ">
+        <button type="submit" class="btn btn-primary">
+          {% if file_data %}Cập nhật{% else %}Tải lên{% endif %}
+        </button>
+        <a href="{{ url_for('user_profile.profile', _anchor='uploads') }}" class="btn btn-secondary">Hủy</a>
       </div>
     </form>
 
@@ -343,7 +350,7 @@
     .tags-wrapper {
       grid-template-columns: repeat(3, minmax(130px, 1fr));
       grid-auto-columns: minmax(130px, 1fr);
-    }
+  }
   }
 
   @media (max-width: 768px) {
@@ -369,8 +376,8 @@
 
     thumbnailInput.addEventListener("change", function () {
       const file = this.files[0];
-      if (file) {
-        const reader = new FileReader();
+    if (file) {
+      const reader = new FileReader();
         reader.onload = function (e) {
           thumbnailPreview.src = e.target.result;
         };

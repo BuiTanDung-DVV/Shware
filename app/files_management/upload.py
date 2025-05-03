@@ -184,6 +184,23 @@ def upload_file():
         # Fallback to empty list if there's an error
         all_tags = []
 
+    # Check if this is an edit request
+    doc_id = request.args.get('doc_id')
+    file_data = None
+    if doc_id:
+        try:
+            file_doc = db.collection('files').document(doc_id).get()
+            if file_doc.exists:
+                file_data = file_doc.to_dict()
+                file_data['doc_id'] = doc_id
+                # Verify the user owns this file
+                if file_data.get('author_id') != current_user.id:
+                    flash('Bạn không có quyền chỉnh sửa file này.', 'error')
+                    return redirect(url_for('user_profile.profile', _anchor='uploads'))
+        except Exception as e:
+            flash(f'Lỗi khi tải dữ liệu file: {str(e)}', 'error')
+            return redirect(url_for('user_profile.profile', _anchor='uploads'))
+
     if request.method == 'POST':
         # Lấy file và thông tin từ form
         file = request.files.get('file')
@@ -194,11 +211,12 @@ def upload_file():
         tags = request.form.getlist('tags')
 
         # Kiểm tra dữ liệu đầu vào - bỏ yêu cầu thumbnail
-        if not file or not title or not description or not tags:
-            flash('Vui lòng điền đầy đủ thông tin và chọn tệp hợp lệ!', 'error')
+        if not title or not description or not tags:
+            flash('Vui lòng điền đầy đủ thông tin!', 'error')
             return redirect(request.url)
 
-        if not file or not allowed_file(file.filename):
+        # For new uploads, require a file
+        if not doc_id and (not file or not allowed_file(file.filename)):
             flash('Chỉ cho phép tải lên các file có định dạng .zip hoặc .rar', 'error')
             return redirect(request.url)
 
@@ -210,67 +228,115 @@ def upload_file():
                     flash('Không thể tải lên ảnh thumbnail. Sử dụng ảnh mặc định.', 'warning')
                     thumbnail_url = '/static/images/default-thumbnail.png'
             else:
-                # Sử dụng thumbnail mặc định
-                thumbnail_url = '/static/images/default-thumbnail.png'
+                # Sử dụng thumbnail mặc định hoặc giữ nguyên thumbnail cũ
+                thumbnail_url = file_data.get('thumbnail_url', '/static/images/default-thumbnail.png') if doc_id else '/static/images/default-thumbnail.png'
 
-            # Generate a unique ID for this upload
-            upload_id = str(uuid.uuid4())
-            
-            # Read the file content
-            file_content = file.read()
-            filename = secure_filename(file.filename)
-            
-            # Create a temporary entry in Firestore for this upload
-            _, doc_ref = db.collection('files').add({
-                'title': title,
-                'author': current_user.name,
-                'author_id': current_user.id,
-                'file_type': filename.rsplit('.', 1)[1].lower(),
-                'file_size': len(file_content),
-                'thumbnail_url': thumbnail_url,
-                'upload_id': upload_id,
-                'upload_status': 'pending',
-                'upload_date': datetime.utcnow().isoformat(),
-                'approve': False, 
-                'visibility': False 
-            })
-            
-            if not isinstance(doc_ref, firestore.DocumentReference):
-                raise ValueError(f"doc_ref không phải là DocumentReference, mà là {type(doc_ref)}")
-            doc_id = doc_ref.id
-            
-            # Initialize progress tracking
-            upload_progress[upload_id] = {
-                'status': 'starting', 
-                'progress': 0, 
-                'filename': filename,
-                'title': title
-            }
-            
-            # Store upload ID in session
-            if 'uploads' not in session:
-                session['uploads'] = []
-            session['uploads'].append(upload_id)
-            session.modified = True
-            
-            # Start background thread for uploading
-            upload_thread = threading.Thread(
-                target=background_upload_task,
-                args=(upload_id, file_content, filename, title, description, tags, 
-                      thumbnail_url, current_user.id, current_user.name, 
-                      current_user.email, current_user.profile_pic, doc_id)
-            )
-            upload_thread.daemon = True
-            upload_thread.start()
+            if doc_id:
+                # Update existing file
+                update_data = {
+                    'title': title,
+                    'description': description,
+                    'tags': tags,
+                    'thumbnail_url': thumbnail_url,
+                    'last_updated': datetime.utcnow().isoformat()
+                }
 
-            flash('Tải lên đã bắt đầu và sẽ tiếp tục trong nền!', 'success')
-            return redirect(url_for('user_profile.profile', _anchor='uploads'))
+                # If a new file is provided, update file info
+                if file and allowed_file(file.filename):
+                    file_content = file.read()
+                    filename = secure_filename(file.filename)
+                    update_data.update({
+                        'file_type': filename.rsplit('.', 1)[1].lower(),
+                        'file_size': len(file_content)
+                    })
+                    # Start background upload for new file
+                    upload_id = str(uuid.uuid4())
+                    update_data['upload_id'] = upload_id
+                    update_data['upload_status'] = 'pending'
+
+                    # Initialize progress tracking
+                    upload_progress[upload_id] = {
+                        'status': 'starting', 
+                        'progress': 0, 
+                        'filename': filename,
+                        'title': title
+                    }
+
+                    # Start background thread for uploading
+                    upload_thread = threading.Thread(
+                        target=background_upload_task,
+                        args=(upload_id, file_content, filename, title, description, tags, 
+                              thumbnail_url, current_user.id, current_user.name, 
+                              current_user.email, current_user.profile_pic, doc_id)
+                    )
+                    upload_thread.daemon = True
+                    upload_thread.start()
+
+                # Update the document
+                db.collection('files').document(doc_id).update(update_data)
+                flash('File đã được cập nhật thành công!', 'success')
+                return redirect(url_for('user_profile.profile', _anchor='uploads'))
+
+            else:
+                # New file upload
+                # Generate a unique ID for this upload
+                upload_id = str(uuid.uuid4())
+                
+                # Read the file content
+                file_content = file.read()
+                filename = secure_filename(file.filename)
+                
+                # Create a temporary entry in Firestore for this upload
+                _, doc_ref = db.collection('files').add({
+                    'title': title,
+                    'author': current_user.name,
+                    'author_id': current_user.id,
+                    'file_type': filename.rsplit('.', 1)[1].lower(),
+                    'file_size': len(file_content),
+                    'thumbnail_url': thumbnail_url,
+                    'upload_id': upload_id,
+                    'upload_status': 'pending',
+                    'upload_date': datetime.utcnow().isoformat(),
+                    'approve': False, 
+                    'visibility': False 
+                })
+                
+                if not isinstance(doc_ref, firestore.DocumentReference):
+                    raise ValueError(f"doc_ref không phải là DocumentReference, mà là {type(doc_ref)}")
+                doc_id = doc_ref.id
+                
+                # Initialize progress tracking
+                upload_progress[upload_id] = {
+                    'status': 'starting', 
+                    'progress': 0, 
+                    'filename': filename,
+                    'title': title
+                }
+                
+                # Store upload ID in session
+                if 'uploads' not in session:
+                    session['uploads'] = []
+                session['uploads'].append(upload_id)
+                session.modified = True
+                
+                # Start background thread for uploading
+                upload_thread = threading.Thread(
+                    target=background_upload_task,
+                    args=(upload_id, file_content, filename, title, description, tags, 
+                          thumbnail_url, current_user.id, current_user.name, 
+                          current_user.email, current_user.profile_pic, doc_id)
+                )
+                upload_thread.daemon = True
+                upload_thread.start()
+
+                flash('Tải lên đã bắt đầu và sẽ tiếp tục trong nền!', 'success')
+                return redirect(url_for('user_profile.profile', _anchor='uploads'))
 
         except Exception as e:
             flash(f'Đã xảy ra lỗi: {str(e)}', 'error')
             return redirect(request.url)
 
-    return render_template('upload.html', all_tags=all_tags)
+    return render_template('upload.html', all_tags=all_tags, file_data=file_data)
 
 
 @upload_bp.route('/upload_progress/<upload_id>', methods=['GET'])

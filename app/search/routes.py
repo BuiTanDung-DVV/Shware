@@ -51,11 +51,12 @@ def search():
         for doc in docs:
             data = doc.to_dict()
             # Tìm kiếm trong title, description và tags
+            visible = data.get('visibility', True)
             title_match = query_lower in data.get('title', '').lower()
             desc_match = query_lower in data.get('description', '').lower()
             tags_match = any(query_lower in tag.lower() for tag in data.get('tags', []))
 
-            if title_match or desc_match or tags_match:
+            if (title_match or desc_match or tags_match) and visible:
                 results.append({
                     'doc_id': doc.id,
                     'title': data.get('title'),
@@ -83,8 +84,8 @@ def search():
             if data.get('references', 0) > 0:  # Chỉ lấy những tags đang được sử dụng
                 all_tags.append(data.get('name'))
 
-        if not results:
-            flash(f'Không tìm thấy kết quả nào cho "{query}".', 'info')
+        # if not results:
+        #     flash(f'Không tìm thấy kết quả nào cho "{query}".', 'info')
 
     except Exception as e:
         flash(f'Lỗi khi tìm kiếm: {str(e)}', 'error')
