@@ -30,17 +30,17 @@ block content %}
         class="card"
         style="background-color: var(--border-color); border-width: 0"
       >
-        <div class="card-header">Quick Actions</div>
+        <div class="card-header">Quản lý</div>
         <div class="card-body">
           <div class="d-flex gap-2">
             <a
               href="{{ url_for('admin.manage_users') }}"
               class="btn btn-primary"
             >
-              <i class="fas fa-users"></i> Manage Users
+              <i class="fas fa-users"></i> Quản lý người dùng
             </a>
             <a href="{{ url_for('admin.manage_files') }}" class="btn btn-info">
-              <i class="fas fa-file"></i> Manage Files
+              <i class="fas fa-file"></i> Quản lý tải lên
             </a>
           </div>
         </div>
@@ -53,7 +53,7 @@ block content %}
     <div class="col-md-3">
       <div class="card bg-primary text-white">
         <div class="card-body">
-          <h5 class="card-title">Total Users</h5>
+          <h5 class="card-title">Tổng người dùng</h5>
           <h2 class="card-text" id="totalUsers">-</h2>
         </div>
       </div>
@@ -61,7 +61,7 @@ block content %}
     <div class="col-md-3">
       <div class="card bg-success text-white">
         <div class="card-body">
-          <h5 class="card-title">Active Users (30d)</h5>
+          <h5 class="card-title">Đang hoạt động (30d)</h5>
           <h2 class="card-text" id="activeUsers">-</h2>
         </div>
       </div>
@@ -69,7 +69,7 @@ block content %}
     <div class="col-md-3">
       <div class="card bg-info text-white">
         <div class="card-body">
-          <h5 class="card-title">Total Files</h5>
+          <h5 class="card-title">Tổng tải lên</h5>
           <h2 class="card-text" id="totalFiles">-</h2>
         </div>
       </div>
@@ -89,7 +89,7 @@ block content %}
     <!-- User Registration Trend -->
     <div class="col-md-6">
       <div class="card">
-        <div class="card-header">User Registration Trend</div>
+        <div class="card-header">Xu hướng đăng ký người dùng mới</div>
         <div class="card-body">
           <div class="chart-container">
             <canvas id="userTrendChart"></canvas>
@@ -101,7 +101,7 @@ block content %}
     <!-- Tag Usage Distribution -->
     <div class="col-md-6">
       <div class="card">
-        <div class="card-header">Tag Usage Distribution</div>
+        <div class="card-header">Phân bố sử dụng tag</div>
         <div class="card-body">
           <div class="chart-container">
             <canvas id="activityChart"></canvas>
@@ -113,7 +113,7 @@ block content %}
     <!-- Subscription Trends -->
     <div class="col-md-12">
       <div class="card">
-        <div class="card-header">Subscription Trends</div>
+        <div class="card-header">Xu hướng đăng ký member</div>
         <div class="card-body">
           <div class="chart-container">
             <canvas id="subscriptionTrendChart"></canvas>
@@ -201,6 +201,7 @@ block content %}
               datasets: [{
                 data: data.activity_distribution.data,
                 backgroundColor: data.activity_distribution.backgroundColor,
+                hoverOffset: 40,
                 borderWidth: 1
               }]
             },
@@ -215,8 +216,18 @@ block content %}
                   }
                 }
               },
-              cutout: "60%"
+              cutout: "60%",
+              animation: {
+                  animateScale: true,
+                  animateRotate: true,
+              },
+              elements: {
+                  arc: {
+                    borderWidth: 0,
+                  },
+                },
             }
+
           });
         }
       })

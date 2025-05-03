@@ -107,7 +107,7 @@ header nav ul {
   align-items: center;
   flex: 1;
   justify-content: flex-end;
-  padding: 0 1rem;
+  padding: 0.2rem 0.5rem;
 }
 
 header nav ul li {
@@ -278,6 +278,7 @@ header nav .search-form button:hover {
 .dropdown-item {
   color: var(--dropdown-item-text) !important;
   padding: 0.5rem 1rem;
+  font-size: 0.9rem;
   text-decoration: none;
   display: block;
   white-space: nowrap;
@@ -305,7 +306,7 @@ header nav .search-form button:hover {
   cursor: pointer;
   font-size: 1.1rem;
   padding: 0.2rem 0.5rem;
-  margin-right: 0.5rem; /* Space before greeting */
+  margin-right: 0.5rem; 
 }
 
 .theme-toggle-btn:hover {

@@ -1,7 +1,7 @@
 {% extends "base.html" %} {% block title %}Login | Shware{% endblock %} {% block
 content %}
 <section class="auth-form">
-  <h2>Login</h2>
+  <h2>Đăng nhập</h2>
   <form id="login-form" onsubmit="return false;">
     {{ form.csrf_token }}
     <div class="form-group">
@@ -16,7 +16,7 @@ content %}
       <div class="invalid-feedback" id="emailError"></div>
     </div>
     <div class="form-group">
-      <label for="password">Password</label>
+      <label for="password">Mật khẩu</label>
       <input
         type="password"
         class="form-control"
@@ -32,7 +32,7 @@ content %}
 
     <div class="form-actions">
       <button type="submit" class="btn btn-primary" id="loginButton">
-        <span class="button-text">Login</span>
+        <span class="button-text">Đăng nhập</span>
         <span
           class="spinner-border spinner-border-sm d-none"
           role="status"
@@ -43,14 +43,14 @@ content %}
   </form>
 
   <div class="social-login mt-4">
-    <h4>Or login with</h4>
+    <h4>Hoặc đăng nhập với</h4>
     <div id="firebaseui-auth-container"></div>
   </div>
 
   <div class="auth-links">
     <p>
-      Don't have an account?
-      <a href="{{ url_for('auth.register') }}">Register</a>
+      Không có tài khoản?
+      <a href="{{ url_for('auth.register') }}">Đăng ký</a>
     </p>
   </div>
 </section>
@@ -98,7 +98,7 @@ content %}
       loginError.style.display = "none";
 
       // Show loading state
-      buttonText.textContent = "Logging in...";
+      buttonText.textContent = "Đang đăng nhập...";
       spinner.classList.remove("d-none");
       loginButton.disabled = true;
 
@@ -137,34 +137,34 @@ content %}
 
         switch (error.code) {
           case "auth/wrong-password":
-          case "auth/invalid-login-credentials": // Add this case
+          case "auth/invalid-login-credentials":
             passwordField.classList.add("is-invalid");
-            errorMessage = "Invalid email or password. Please try again.";
+            errorMessage = "Email hoặc mật khẩu không chính xác. Vui lòng thử lại.";
             break;
           case "auth/user-not-found":
             emailField.classList.add("is-invalid");
-            errorMessage = "No account found with this email address.";
+            errorMessage = "Không tìm thấy tài khoản với email này.";
             break;
           case "auth/too-many-requests":
             errorMessage =
-              "Too many failed login attempts. Please try again later or reset your password.";
+              "Quá nhiều lần đăng nhập thất bại. Vui lòng thử lại sau hoặc đặt lại mật khẩu.";
             break;
           case "auth/invalid-email":
             emailField.classList.add("is-invalid");
-            errorMessage = "Please enter a valid email address.";
+            errorMessage = "Vui lòng nhập địa chỉ email hợp lệ.";
             break;
           case "auth/network-request-failed":
             errorMessage =
-              "Network error. Please check your internet connection and try again.";
+              "Lỗi mạng. Vui lòng kiểm tra kết nối internet và thử lại.";
             break;
           default:
-            console.error("Firebase auth error:", error);
+            console.error("Lỗi Firebase auth:", error);
             if (
               error.message &&
               error.message.includes("INVALID_LOGIN_CREDENTIALS")
             ) {
               passwordField.classList.add("is-invalid");
-              errorMessage = "Invalid email or password. Please try again.";
+              errorMessage = "Email hoặc mật khẩu không chính xác. Vui lòng thử lại.";
             } else if (error.message) {
               errorMessage = error.message;
             }
@@ -174,7 +174,7 @@ content %}
         loginError.style.display = "block";
       } finally {
         // Reset button state
-        buttonText.textContent = "Login";
+        buttonText.textContent = "Đăng nhập";
         spinner.classList.add("d-none");
         loginButton.disabled = false;
       }

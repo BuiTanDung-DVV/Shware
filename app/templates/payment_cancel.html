@@ -1,31 +1,31 @@
-{% extends "base.html" %} {% block title %}Payment Cancelled | Shware{% endblock
+{% extends "base.html" %} {% block title %}Thanh toán đã bị hủy | Shware{% endblock
 %} {% block content %}
 <div class="payment-result text-center">
   <div class="cancel-icon mb-4">
     <i class="fas fa-times-circle" style="font-size: 4rem; color: #dc3545"></i>
   </div>
-  <h1 class="mb-3">Payment Cancelled</h1>
+  <h1 class="mb-3">Thanh toán đã bị hủy</h1>
   <p class="mb-4">
-    Your payment has been cancelled. If you have any questions or encountered
-    any issues, please don't hesitate to contact our support team.
+    Thanh toán của bạn đã bị hủy. Nếu bạn có bất kỳ câu hỏi hoặc gặp phải
+    vấn đề, vui lòng liên hệ với nhóm hỗ trợ của chúng tôi.
   </p>
 
   <div class="support-info mb-4">
-    <h4 class="mb-3">Common Issues</h4>
+    <h4 class="mb-3">Các vấn đề thường gặp</h4>
     <ul class="list-unstyled">
-      <li>• Payment method declined</li>
-      <li>• Network connection issues</li>
-      <li>• Session timeout</li>
+      <li>• Phương thức thanh toán bị từ chối</li>
+      <li>• Vấn đề kết nối mạng</li>
+      <li>• Timeout phiên làm việc</li>
     </ul>
-    <p class="mt-3">Need help? Contact us at support@shware.com</p>
+    <p class="mt-3">Cần trợ giúp? Liên hệ với chúng tôi tại support@shware.com</p>
   </div>
 
   <div class="action-buttons">
     <a href="{{ url_for('payment.subscribe') }}" class="btn btn-primary me-2"
-      >Try Again</a
+      >Thử lại</a
     >
     <a href="{{ url_for('main.home') }}" class="btn btn-outline-secondary"
-      >Return to Homepage</a
+      >Trở lại trang chủ</a
     >
   </div>
 </div>

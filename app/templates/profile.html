@@ -287,7 +287,7 @@ block title %}User Profile{% endblock %} {% block styles %}
 </style>
 {% endblock %} {% block content %}
 <div class="profile-container">
-  <h2>User Dashboard</h2>
+  <!-- <h2>Tài khoản của tôi</h2> -->
   <ul class="nav nav-tabs" id="profileTabs" role="tablist">
     <li class="nav-item" role="presentation">
       <button
@@ -300,7 +300,7 @@ block title %}User Profile{% endblock %} {% block styles %}
         aria-controls="profile"
         aria-selected="true"
       >
-        User Profile
+        Hồ sơ cá nhân
       </button>
     </li>
     <li class="nav-item" role="presentation">
@@ -314,7 +314,7 @@ block title %}User Profile{% endblock %} {% block styles %}
         aria-controls="uploads"
         aria-selected="false"
       >
-        Uploads
+        Đã tải lên
       </button>
     </li>
   </ul>
@@ -329,21 +329,21 @@ block title %}User Profile{% endblock %} {% block styles %}
       <!-- Nội dung của tab User Profile -->
       <div class="profile-grid">
         <div class="profile-info">
-          <h3>Account Information</h3>
+          <h3>Thông tin tài khoản</h3>
           <img
             src="{{ user_info.avatar }}"
             alt="User Avatar"
             class="profile-avatar"
           />
-          <p><strong>Username:</strong> {{ user_info.name or 'Not set' }}</p>
+          <p><strong>Tên tài khoản:</strong> {{ user_info.name or 'Không có' }}</p>
           <p><strong>Email:</strong> {{ user_info.email }}</p>
           <p>
-            <strong>Member Since:</strong> {{ user_info.registration_date |
+            <strong>Ngày đăng ký:</strong> {{ user_info.registration_date |
             format_timestamp }}
           </p>
           <div class="col" style="margin-top: 2rem">
             <p>
-              <strong>Subscription:</strong>
+              <strong>Gói thành viên:</strong>
               <span
                 class="badge {% if current_user.subscription_status == 'active' %}bg-success{% elif current_user.subscription_status == 'expired' %}bg-danger{% else %}bg-secondary{% endif %}"
               >
@@ -351,19 +351,19 @@ block title %}User Profile{% endblock %} {% block styles %}
               </span>
             </p>
             <p>
-              <strong>Valid Until:</strong> {{
+              <strong>Hạn sử dụng:</strong> {{
               current_user.subscription_end_date|format_datetime if
               current_user.subscription_end_date else 'N/A' }}
             </p>
             <a
               href="{{ url_for('user_profile.subscription') }}"
               class="btn btn-primary"
-              >Manage Subscription</a
+              >Quản lý gói thành viên</a
             >
           </div>
         </div>
         <div class="profile-update-form" style="color: var(--text-color)">
-          <h3>Update Profile</h3>
+          <h3>Cập nhật hồ sơ</h3>
           <form
             method="POST"
             action="{{ url_for('user_profile.profile') }}"
@@ -375,9 +375,9 @@ block title %}User Profile{% endblock %} {% block styles %}
             </div>
             <hr />
             {% if has_password_provider %}
-            <h4>Change Password</h4>
+            <h4>Đổi mật khẩu</h4>
             <p class="text small">
-              Leave blank if you don't want to change your password.
+              Để trống nếu bạn không muốn đổi mật khẩu.
             </p>
             <div id="current_password_wrapper">
               {{ render_field(form.current_password) }}
@@ -389,9 +389,9 @@ block title %}User Profile{% endblock %} {% block styles %}
               {{ render_field(form.confirm_new_password) }}
             </div>
             {% else %}
-            <h4>Password Management</h4>
+            <h4>Quản lý mật khẩu</h4>
             <p class="text small">
-              You are logged in using a third-party provider (like Google).
+              Bạn đang đăng nhập bằng nhà cung cấp thứ ba (như Google).
             </p>
             {% endif %}
             <div id="submit_button_wrapper">
@@ -410,7 +410,7 @@ block title %}User Profile{% endblock %} {% block styles %}
       aria-labelledby="uploads-tab"
     >
       <!-- Nội dung của tab Uploads -->
-      <h3>Your Uploads</h3>
+      <!-- <h3>Tải lên của tôi</h3> -->
       {% if user_uploads %}
       <div class="uploads-column-layout">
         {% for file in user_uploads %}
@@ -430,7 +430,7 @@ block title %}User Profile{% endblock %} {% block styles %}
                 {{ file.title }}
               </a>
               <div class="file-card-status {% if file.approve == true %}approved{% else %}pending{% endif %}">
-                {% if file.approve == true %}Approved{% else %}Pending{% endif %}
+                {% if file.approve == true %}Đã duyệt{% else %}Chưa duyệt{% endif %}
               </div>
             </div>
             
@@ -438,7 +438,7 @@ block title %}User Profile{% endblock %} {% block styles %}
               <span class="file-card-date"
                 >{{ file.upload_date | format_datetime }}</span
               >
-              <span class="file-card-type">{{ file.file_type }}</span>
+              <span class="file-card-type">{{ file.file_size|format_filesize }}</span>
             </div>
 
             <!-- Thanh tiến trình nếu đang tải lên -->
@@ -469,20 +469,15 @@ block title %}User Profile{% endblock %} {% block styles %}
               >
                 <i class="fas fa-edit"></i>
               </a>
-              <form
-                method="POST"
-                action="{{ url_for('files.delete_file', doc_id=file.doc_id) }}"
-                style="display: inline"
-                onsubmit="return confirm('Are you sure you want to delete this file?');"
+              <button
+                type="button"
+                class="btn btn-sm btn-outline-danger action-btn delete-file"
+                title="Delete"
+                data-file-id="{{ file.doc_id }}"
+                data-file-name="{{ file.title }}"
               >
-                <button
-                  type="submit"
-                  class="btn btn-sm btn-outline-danger action-btn"
-                  title="Delete"
-                >
-                  <i class="fas fa-trash"></i>
-                </button>
-              </form>
+                <i class="fas fa-trash"></i>
+              </button>
             </div>
           </div>
         </div>
@@ -493,6 +488,38 @@ block title %}User Profile{% endblock %} {% block styles %}
       {% endif %}
     </div>
   </div>
+</div>
+
+<!-- Confirmation Modal -->
+<div class="modal fade" 
+     id="confirmationModal" 
+     tabindex="-1" 
+     role="dialog"
+     aria-labelledby="confirmationModalLabel">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="confirmationModalLabel">Xác nhận</h5>
+                <button type="button" 
+                        class="btn-close" 
+                        data-bs-dismiss="modal" 
+                        aria-label="Đóng">
+                </button>
+            </div>
+            <div class="modal-body">
+                <p id="confirmationMessage"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" 
+                        class="btn btn-secondary" 
+                        data-bs-dismiss="modal" 
+                        id="cancelAction">Hủy</button>
+                <button type="button" 
+                        class="btn btn-primary" 
+                        id="confirmAction">Xác nhận</button>
+            </div>
+        </div>
+    </div>
 </div>
 
 {% endblock %} {% block scripts %}
@@ -541,6 +568,106 @@ block title %}User Profile{% endblock %} {% block styles %}
 
     // Tìm và cập nhật thanh tiến trình cho các file đang tải
     updateAllProgressBars();
+
+    // Initialize tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+
+    // Confirmation Modal Helper
+    let confirmationModal = null;
+    function showConfirmationModal({ message, onConfirm, onCancel }) {
+        // Initialize modal only when needed
+        if (!confirmationModal) {
+            confirmationModal = new bootstrap.Modal(document.getElementById("confirmationModal"));
+        }
+
+        const modal = document.getElementById("confirmationModal");
+        const messageEl = modal.querySelector("#confirmationMessage");
+        const confirmBtn = modal.querySelector("#confirmAction");
+        const cancelBtn = modal.querySelector("#cancelAction");
+
+        messageEl.textContent = message;
+
+        const handleConfirm = async () => {
+            confirmationModal.hide();
+            removeListeners();
+            await onConfirm();
+        };
+
+        const handleCancel = () => {
+            confirmationModal.hide();
+            removeListeners();
+            if (onCancel) onCancel();
+        };
+
+        const handleModalHidden = () => {
+            removeListeners();
+            if (onCancel) onCancel();
+        };
+
+        const removeListeners = () => {
+            confirmBtn.removeEventListener("click", handleConfirm);
+            cancelBtn.removeEventListener("click", handleCancel);
+            modal.removeEventListener("hidden.bs.modal", handleModalHidden);
+        };
+
+        confirmBtn.addEventListener("click", handleConfirm);
+        cancelBtn.addEventListener("click", handleCancel);
+        modal.addEventListener("hidden.bs.modal", handleModalHidden);
+
+        confirmationModal.show();
+    }
+
+    // Delete file handler
+    document.querySelectorAll('.delete-file').forEach(button => {
+        button.addEventListener('click', function() {
+            const fileId = this.dataset.fileId;
+            const fileName = this.dataset.fileName;
+            
+            showConfirmationModal({
+                message: `Bạn có chắc chắn muốn xóa file "${fileName}"? Hành động này không thể hoàn tác.`,
+                onConfirm: async () => {
+                    try {
+                        const response = await fetch(`/files/${fileId}/delete`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRFToken': '{{ csrf_token() }}'
+                            }
+                        });
+
+                        if (response.ok) {
+                            // Remove the file card from the UI
+                            const fileCard = document.querySelector(`#file-${fileId}`);
+                            if (fileCard) {
+                                fileCard.remove();
+                            }
+                            // Show success message
+                            showAlert('File đã được xóa thành công', 'success');
+                        } else {
+                            throw new Error('Không thể xóa file');
+                        }
+                    } catch (error) {
+                        showAlert(error.message, 'danger');
+                    }
+                }
+            });
+        });
+    });
+
+    // Alert helper
+    function showAlert(message, type) {
+        const alertDiv = document.createElement("div");
+        alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+        alertDiv.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        document.querySelector(".container").insertBefore(alertDiv, document.querySelector(".card"));
+        setTimeout(() => alertDiv.remove(), 5000);
+    }
   });
 
   // Hàm cập nhật một thanh tiến trình cụ thể

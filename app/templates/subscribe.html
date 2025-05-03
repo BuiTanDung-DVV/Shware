@@ -1,28 +1,28 @@
 {% extends "base.html" %} {% block title %}Subscribe | Shware{% endblock %} {%
 block content %}
 <section class="subscription-section">
-  <h1 class="text-center mb-4">Premium</h1>
+  <h1 class="text-center mb-4">Gói thành viên</h1>
   <p class="text-center subtitle mb-5">
-    Get started with a Shware Subscription that works for you.
+    Bắt đầu với gói thành viên Shware mà bạn cần.
   </p>
 
   <div class="subscription-plans">
     <!-- Monthly Plan -->
     <div class="plan-card">
       <h2 class="plan-title">
-        Monthly <span class="billed-text">billed monthly</span>
+        Gói tháng <span class="billed-text">đóng hàng tháng </span>
       </h2>
       <div class="price-info">
-        <p class="previous-price">Down from 35.000đ/month.</p>
+        <p class="previous-price">Giảm từ 35.000đ/tháng.</p>
         <p>
-          Our monthly plan grants access to all premium features, the best plan
-          for short-term subscribers.
+          Gói tháng cung cấp quyền truy cập vào tất cả các tính năng cao cấp,
+          phù hợp cho người dùng tạm thời.
         </p>
       </div>
       <div class="price">
         <span class="currency">đ</span>
-        <span class="amount">35.000đ</span>
-        <span class="period">/mo</span>
+        <span class="amount">35.000</span>
+        <span class="period">/tháng</span>
       </div>
       <p class="price-note">
         <!-- Prices are marked in VND -->
@@ -31,7 +31,7 @@ block content %}
         class="btn btn-dark w-100 subscribe-btn"
         onclick="handlePayment('monthly')"
       >
-        Subscribe
+        Đăng ký
       </button>
     </div>
 
@@ -39,21 +39,23 @@ block content %}
     <div class="plan-card featured" , style="color: #212529">
       <div class="most-popular">🌟 Most popular</div>
       <h2 class="plan-title">
-        Yearly
+        Gói năm
         <span class="billed-text" , style="color: #212529"
-          >billed yearly (159.000đ)</span
+          >đóng hàng năm (159.000đ)</span
         >
       </h2>
       <div class="price-info" , style="color: #212529">
         <p class="previous-price" , style="color: #212529">
-          Our most popular plan previously sold for 259.000đ
+          Gói thành viên phổ biến nhất trước đây được bán với giá 259.000đ
         </p>
-        <p>This plan saves you over 60% in comparison to the monthly plan.</p>
+        <p>
+          Gói thành viên này tiết kiệm cho bạn hơn 60% so với gói tháng.
+        </p>
       </div>
       <div class="price" , style="color: #212529">
         <span class="currency">đ</span>
-        <span class="amount">13.250đ</span>
-        <span class="period" , style="color: #212529">/mo</span>
+        <span class="amount">13.250</span>
+        <span class="period" , style="color: #212529">/tháng</span>
       </div>
       <p class="price-note" , style="color: #212529">
         <!-- Prices are marked in VND -->
@@ -62,7 +64,7 @@ block content %}
         class="btn btn-dark w-100 subscribe-btn"
         onclick="handlePayment('yearly')"
       >
-        Subscribe
+        Đăng ký
       </button>
     </div>
   </div>
@@ -148,6 +150,7 @@ block content %}
   .price-info {
     margin-bottom: 1.5rem;
     font-size: 0.9rem;
+  }
 
   .previous-price {
     color: var(--text-color);

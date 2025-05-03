@@ -162,10 +162,10 @@ def register():
                 'role': 'user'  # Set default role
             })
 
-            flash('Registration successful! Please log in.', 'success')
+            flash('Đăng ký thành công! Vui lòng đăng nhập.', 'success')
             return redirect(url_for('auth.login'))
         except Exception as e:
-            flash(f'Registration failed: {str(e)}', 'danger')
+            flash(f'Đăng ký thất bại: {str(e)}', 'danger')
             return redirect(url_for('auth.register'))
 
     return render_template('register.html', form=form)
@@ -174,7 +174,7 @@ def register():
 def logout():
     logout_user()
     session.clear()
-    flash('You have been logged out.', 'success')
+    flash('Đăng xuất thành công.', 'success')
     return redirect(url_for('auth.login'))
 
 # Helper function to get user data from Firestore

@@ -190,26 +190,26 @@
   }
 </style>
 
-<div class="container mt-4">
-  <h2>Files Management</h2>
+<div class="container mt-1">
+  <h2>Quản lý tải lên</h2>
   <div class="d-flex justify-content-between align-items-center mb-3">
     <a href="{{ url_for('admin.dashboard') }}" class="btn btn-secondary"
-      >&larr; Back to Dashboard</a
+      >&larr; Quay lại Dashboard</a
     >
     <div class="d-flex gap-2">
       <input
         type="text"
         id="searchInput"
         class="form-control"
-        style="width: 190px"
-        placeholder="Search files or author..."
+        style="width: 240 px"
+        placeholder="Tìm kiếm tên hoặc tác giả..."
       />
       <select id="statusFilter" class="form-select">
-        <option value="">All Files</option>
-        <option value="approved">Approved</option>
-        <option value="pending">Pending</option>
-        <option value="public">Public</option>
-        <option value="private">Private</option>
+        <option value="">Tất cả tài liệu</option>
+        <option value="approved">Đã duyệt</option>
+        <option value="pending">Chưa duyệt</option>
+        <option value="public">Công khai</option>
+        <option value="private">Riêng tư</option>
       </select>
     </div>
   </div>
@@ -218,13 +218,13 @@
     <table class="table">
       <thead class="table-light">
         <tr>
-          <th>Title</th>
-          <th>Size</th>
-          <th>Author</th>
-          <th>Upload Date</th>
-          <th>Approved</th>
-          <th>Visible</th>
-          <th>Actions</th>
+          <th>Tên</th>
+          <th>Kích thước</th>
+          <th>Tác giả</th>
+          <th>Ngày tải lên</th>
+          <th>Đã duyệt</th>
+          <th>Công khai</th>
+          <th>Hành động</th>
         </tr>
       </thead>
       <tbody>
@@ -450,6 +450,11 @@
           visibilityToggle.disabled = !approved;
           if (!approved) {
             visibilityToggle.checked = false;
+            toggleVisibility(fileId, false);
+          }
+          if (approved) {
+            visibilityToggle.checked = true;
+            toggleVisibility(fileId, true);
           }
         }
       })
