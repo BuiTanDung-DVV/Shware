@@ -169,7 +169,6 @@
             <ul>
               {% if current_user.is_authenticated %}
               <li><a href="{{ url_for('main.home') }}">Trang chủ</a></li>
-              <li><a href="{{ url_for('post.posts') }}">Blogs</a></li>
               <!--li><a href="{{ url_for('files.list_files') }}">Files</a></li-->
               {% if current_user.role == 'member' or current_user.role == 'admin' %}
               <li><a href="{{ url_for('upload.upload_file') }}">Tải lên</a></li>
