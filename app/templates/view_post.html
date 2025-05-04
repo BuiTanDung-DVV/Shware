@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<main>
+  <div class="auth-form">
+    <h2>📄 Chi Tiết Bài Viết</h2>
+
+    <!-- Tiêu đề -->
+    <div class="form-group">
+      <h1>{{ post.title }}</h1>
+    </div>
+
+    <!-- Tác giả và ngày đăng -->
+    <div class="form-group author-info">
+      <img src="{{ post.author_avatar_url or url_for('static', filename='default-avatar.png') }}" alt="Avatar" style="width:40px; height:40px; border-radius:50%;">
+      <div>
+        <strong>{{ post.author_name }}</strong><br>
+        <small>Đăng ngày {{ post.created_at.strftime('%d/%m/%Y') }}</small>
+      </div>
+    </div>
+
+    <!-- Ảnh Thumbnail -->
+    {% if post.thumbnail_url %}
+    <div class="form-group thumbnail">
+      <img src="{{ post.thumbnail_url }}" alt="Thumbnail" style="max-width:100%; height:auto;">
+    </div>
+    {% endif %}
+
+    <!-- Nội dung -->
+    <div class="form-group content">
+      <p>{{ post.content | safe }}</p>
+    </div>
+
+    <!-- Mô tả ngắn -->
+    <div class="form-group description">
+      <blockquote>{{ post.description }}</blockquote>
+    </div>
+
+    <!-- Thẻ tags -->
+    {% if post.tags %}
+    <div class="form-group tags">
+      {% for tag in post.tags %}
+        <span>#{{ tag }}</span>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Tệp đính kèm -->
+    {% if post.attachment_url %}
+    <div class="form-group attachment">
+      <a href="{{ post.attachment_url }}" download>📥 Tải file đính kèm</a>
+    </div>
+    {% endif %}
+
+    <!-- Quay về danh sách -->
+    <div class="auth-links">
+      <a href="{{ url_for('post.list_posts') }}">⬅️ Quay lại Danh sách</a>
+    </div>
+  </div>
+</main>
+{% endblock %}
