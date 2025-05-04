@@ -37,7 +37,7 @@ def create_app(config_class=Config):
     
     # Initialize limiter with app
     # limiter.init_app(app)
-    
+
     # Custom error handler for rate limiting
     # @app.errorhandler(429)
     # def ratelimit_handler(e):
@@ -69,7 +69,13 @@ def create_app(config_class=Config):
     login_manager.init_app(app)
     login_manager.login_view = 'auth.login'
     login_manager.login_message = ''
-    
+
+    from datetime import datetime
+    # Register the custom filter for formatting dates
+    @app.context_processor
+    def inject_now():
+        return {'now': datetime.now()}
+
     # Register blueprints
     from app.auth.routes import auth_bp
     app.register_blueprint(auth_bp)
@@ -96,7 +102,10 @@ def create_app(config_class=Config):
     # Register payment blueprint
     from app.payment.routes import payment_bp
     app.register_blueprint(payment_bp)
-    
+
+    from app.upload_post.routes import post_bp
+    app.register_blueprint(post_bp)
+
     return app
 
 @login_manager.user_loader
