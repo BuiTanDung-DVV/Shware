@@ -271,7 +271,8 @@ def view_post(slug):
                                post=post,
                                post_id=post_id,
                                related_posts=related_posts,
-                               comments=comments)
+                               comments=comments,
+                               now=datetime.now())
     except Exception as e:
         flash(f'Error loading post: {str(e)}', 'error')
         return redirect(url_for('post.list_posts'))
