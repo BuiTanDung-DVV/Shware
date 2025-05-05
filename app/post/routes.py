@@ -6,15 +6,23 @@ db = firestore.client()
 
 @post_bp.route('/posts')
 def list_posts():
-    posts_ref = db.collection('posts').order_by('created_at', direction=firestore.Query.DESCENDING)
-    posts = []
+    try:
+        # Lấy danh sách bài viết, sắp xếp theo ngày tạo mới nhất
+        posts_ref = db.collection('posts').order_by('created_at', direction=firestore.Query.DESCENDING)
+        posts = []
 
-    for doc in posts_ref.stream():
-        post_data = doc.to_dict()
-        post_data['id'] = doc.id  # để dùng trong URL
-        posts.append(post_data)
+        # Lấy dữ liệu từng bài viết
+        docs = posts_ref.stream()
+        for doc in docs:
+            data = doc.to_dict()
+            data['id'] = doc.id  # thêm ID để dùng khi xem chi tiết
+            posts.append(data)
 
-    return render_template('posts.html', posts=posts)
+        return render_template('posts.html', posts=posts)
+
+    except Exception as e:
+        print("❌ Lỗi khi lấy danh sách bài viết:", e)
+        return render_template('posts.html', posts=[])
 
 @post_bp.route('/view/<post_id>')
 def view_post(post_id):
