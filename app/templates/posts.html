@@ -5,7 +5,7 @@
 
   {% if posts %}
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-      {% for post_id, post in posts %}
+      {% for post in posts %}
         <div class="rounded-xl shadow-md p-4 border border-gray-200 bg-white hover:shadow-lg transition duration-200">
           <h2 class="text-xl font-semibold text-blue-600 mb-2">
             {{ post.title }}
@@ -15,15 +15,15 @@
           </p>
           {% if post.tags %}
             <p class="text-sm text-gray-500 mb-2">
-              🏷 Tags: {{ post.tags }}
+              🏷 Tags: {{ post.tags | join(', ') }}
             </p>
           {% endif %}
-          {% if post.timestamp %}
+          {% if post.created_at %}
             <p class="text-sm text-gray-400 mb-3">
-              🕒 {{ post.timestamp | timestamp_to_date }}
+              🕒 {{ post.created_at | timestamp_to_date }}
             </p>
           {% endif %}
-          <a href="{{ url_for('post.view_post', post_id=post_id) }}"
+          <a href="{{ url_for('post.view_post', post_id=post.id) }}"
              class="inline-block px-4 py-2 bg-blue-500 text-white text-sm rounded hover:bg-blue-600 transition">
             📖 Xem Chi Tiết
           </a>
@@ -35,21 +35,3 @@
   {% endif %}
 </main>
 {% endblock %}
-<style>
-    .post-card {
-      border: 1px solid #ddd;
-      border-radius: 12px;
-      padding: 20px;
-      margin-bottom: 20px;
-      background: white;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-    }
-    .post-card h2 {
-      color: #1d4ed8;
-      margin-bottom: 10px;
-    }
-    .post-card p {
-      color: #4b5563;
-    }
-  </style>
-  
