@@ -63,45 +63,69 @@ def manage_users():
             
             # Lấy danh sách người dùng cho trang hiện tại
             users = []
+            print("\n=== Starting User Data Processing ===")
+            print(f"Page: {page}, Per Page: {per_page}")
+            
             users_query = users_ref.order_by('created_at', direction=firestore.Query.DESCENDING)\
                 .offset((page - 1) * per_page)\
                 .limit(per_page)
                 
             # Lấy danh sách user IDs để batch lookup
             user_ids = []
+            print("\nProcessing Firestore documents:")
             for doc in users_query.stream():
                 try:
+                    print(f"\nProcessing document ID: {doc.id}")
                     user_data = doc.to_dict()
+                    print(f"Document data: {user_data}")
+                    
                     user_data['id'] = doc.id
+                    if 'created_at' not in user_data:
+                        user_data['created_at'] = None
+                        print("Created_at not found, setting to None")
                     user_ids.append(doc.id)
                     users.append(user_data)
+                    print(f"Added user: {user_data.get('email', 'No email')}")
                 except Exception as doc_error:
                     print(f"Error processing document {doc.id}: {str(doc_error)}")
                     continue
             
+            print(f"\nTotal users collected: {len(users)}")
+            print(f"User IDs for Firebase Auth: {user_ids}")
+            
             # Batch lookup user info from Firebase Auth
             try:
                 if user_ids:
-                    firebase_users = firebase_auth.get_users(user_ids)
+                    print("\nFetching Firebase Auth data...")
+                    # Chuyển đổi user_ids thành danh sách UidIdentifier
+                    identifiers = [firebase_auth.UidIdentifier(uid) for uid in user_ids]
+                    firebase_users = firebase_auth.get_users(identifiers)
                     user_info_map = {user.uid: user for user in firebase_users.users}
+                    print(f"Firebase Auth users found: {len(user_info_map)}")
                     
                     # Update user data with Firebase Auth info
+                    print("\nUpdating user data with Firebase Auth info:")
                     for user in users:
+                        print(f"\nProcessing user: {user.get('email', 'No email')}")
                         if user['id'] in user_info_map:
                             firebase_user = user_info_map[user['id']]
+                            print(f"Found Firebase Auth data for {user['id']}")
                             user['disabled'] = firebase_user.disabled
                             user['email'] = firebase_user.email
-                            user['display_name'] = firebase_user.name
-                            user['photo_url'] = firebase_user.photo_url
+                            user['display_name'] = firebase_user.display_name or user.get('name', '')
+                            user['photo_url'] = firebase_user.photo_url or user.get('profile_pic', '')
                             user['registration_date'] = firebase_user.user_metadata.creation_timestamp
+                            user['role'] = user.get('role', 'user')  # Ensure role is set
                         else:
-                            user['disabled'] = False
+                            user['disabled'] = user.get('disabled', False)
                             user['email'] = user.get('email', '')
                             user['display_name'] = user.get('name', '')
                             user['photo_url'] = user.get('profile_pic', '')
                             user['registration_date'] = user.get('created_at', None)
+                            user['role'] = user.get('role', 'user')  # Ensure role is set
             except Exception as auth_error:
-                print(f"Error getting Firebase Auth data: {str(auth_error)}")
+                print(f"\nError getting Firebase Auth data: {str(auth_error)}")
+                print("Using Firestore data only")
                 # If Firebase Auth lookup fails, use Firestore data only
                 for user in users:
                     user['disabled'] = False
@@ -127,16 +151,35 @@ def manage_users():
                     pages = [1, '...'] + list(range(total_pages - 4, total_pages + 1))
                 else:
                     pages = [1, '...'] + list(range(page - 1, page + 2)) + ['...', total_pages]
+            
+            try:
+                print("\nStandardizing datetime formats:")
+                # Standardize datetime formats
+                for user in users:
+                    print(f"\nProcessing user: {user.get('email', 'No email')}")
+                    # Convert registration_date to datetime string if it's an integer
+                    if isinstance(user.get('registration_date'), int):
+                        user['registration_date'] = datetime.fromtimestamp(user['registration_date'] / 1000).strftime('%Y-%m-%d %H:%M:%S')
+                    elif isinstance(user.get('registration_date'), (datetime, type(None))):
+                        user['registration_date'] = user['registration_date'].strftime('%Y-%m-%d %H:%M:%S') if user['registration_date'] else None
                     
-            return render_template('admin_users.html', 
-                               users=users,
-                               page=page,
-                               total_pages=total_pages,
-                               has_prev=has_prev,
-                               has_next=has_next,
-                               prev_page=prev_page,
-                               next_page=next_page,
-                               pages=pages)
+                    # Convert created_at to string
+                    if isinstance(user.get('created_at'), (datetime, type(None))):
+                        user['created_at'] = user['created_at'].strftime('%Y-%m-%d %H:%M:%S') if user['created_at'] else None
+                
+            
+                return render_template('admin_users.html', 
+                                   users=users,
+                                   page=page,
+                                   total_pages=total_pages,
+                                   has_prev=has_prev,
+                                   has_next=has_next,
+                                   prev_page=prev_page,
+                                   next_page=next_page,
+                                   pages=pages)
+            except Exception as render_error:
+                print(f"Error rendering template: {str(render_error)}")
+                raise render_error
                                
         except Exception as firestore_error:
             print(f"Firestore error: {str(firestore_error)}")
@@ -446,13 +489,13 @@ def subscription_trend():
         end_date = datetime.now().replace(tzinfo=None)  # Make timezone-naive
         start_date = end_date - timedelta(days=30)
         
-        print(f"\n=== Subscription Trend Analysis ===")
-        print(f"Date Range: {start_date.strftime('%Y-%m-%d')} to {end_date.strftime('%Y-%m-%d')}")
+        # print(f"\n=== Subscription Trend Analysis ===")
+        # print(f"Date Range: {start_date.strftime('%Y-%m-%d')} to {end_date.strftime('%Y-%m-%d')}")
         
         # Query Firestore for subscription data
         users_ref = db_firestore.collection('users')
         users = users_ref.get()
-        print(f"Total users found: {len(users)}")
+        # print(f"Total users found: {len(users)}")
         
         # Initialize daily counts
         daily_counts = {}
@@ -519,20 +562,20 @@ def subscription_trend():
         cancelled_subs = [daily_counts[date]['cancelled_subscriptions'] for date in dates]
         
         # Print detailed statistics
-        print("\nDaily Statistics:")
-        for date in dates:
-            stats = daily_counts[date]
-            if stats['new_subscriptions'] > 0 or stats['active_subscriptions'] > 0 or stats['cancelled_subscriptions'] > 0:
-                print(f"{date}:")
-                print(f"  New: {stats['new_subscriptions']}")
-                print(f"  Active: {stats['active_subscriptions']}")
-                print(f"  Cancelled: {stats['cancelled_subscriptions']}")
+        # print("\nDaily Statistics:")
+        # for date in dates:
+        #     stats = daily_counts[date]
+        #     if stats['new_subscriptions'] > 0 or stats['active_subscriptions'] > 0 or stats['cancelled_subscriptions'] > 0:
+        #         print(f"{date}:")
+        #         print(f"  New: {stats['new_subscriptions']}")
+        #         print(f"  Active: {stats['active_subscriptions']}")
+        #         print(f"  Cancelled: {stats['cancelled_subscriptions']}")
         
-        print("\nSummary:")
-        print(f"Total new subscriptions: {sum(new_subs)}")
-        print(f"Total active subscriptions: {sum(active_subs)}")
-        print(f"Total cancelled subscriptions: {sum(cancelled_subs)}")
-        print("===============================\n")
+        # print("\nSummary:")
+        # print(f"Total new subscriptions: {sum(new_subs)}")
+        # print(f"Total active subscriptions: {sum(active_subs)}")
+        # print(f"Total cancelled subscriptions: {sum(cancelled_subs)}")
+        # print("===============================\n")
         
         return jsonify({
             'dates': dates,

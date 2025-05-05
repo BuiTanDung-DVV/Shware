@@ -137,7 +137,7 @@
                             </td>
                             <td>
                                 {% if user.registration_date %}
-                                <div>{{ user.registration_date| format_datetime }}</div>
+                                <div>{{ user.registration_date|format_datetime }}</div>
                                 {% else %}
                                 N/A
                                 {% endif %}
@@ -375,22 +375,66 @@
           const visibleRows = document.querySelectorAll(
             'tbody tr:not([style*="display: none"])'
           );
+          
+          // Count users based on their status
           const activeUsers = Array.from(visibleRows).filter(
             (row) => row.querySelector(".status-toggle").checked
           ).length;
+          
           const adminUsers = Array.from(visibleRows).filter(
             (row) => row.querySelector(".role-select").value === "admin"
           ).length;
+          
           const disabledUsers = Array.from(visibleRows).filter(
             (row) => !row.querySelector(".status-toggle").checked
           ).length;
 
-          document.getElementById("totalUsers").textContent =
-            visibleRows.length;
-          document.getElementById("activeUsers").textContent = activeUsers;
-          document.getElementById("adminUsers").textContent = adminUsers;
-          document.getElementById("disabledUsers").textContent = disabledUsers;
+          // Update the stats cards with animation
+          const totalUsersEl = document.getElementById("totalUsers");
+          const activeUsersEl = document.getElementById("activeUsers");
+          const adminUsersEl = document.getElementById("adminUsers");
+          const disabledUsersEl = document.getElementById("disabledUsers");
+
+          // Add animation class
+          [totalUsersEl, activeUsersEl, adminUsersEl, disabledUsersEl].forEach(el => {
+            el.classList.add('stat-value-update');
+          });
+
+          // Update values
+          totalUsersEl.textContent = visibleRows.length;
+          activeUsersEl.textContent = activeUsers;
+          adminUsersEl.textContent = adminUsers;
+          disabledUsersEl.textContent = disabledUsers;
+
+          // Remove animation class after animation completes
+          setTimeout(() => {
+            [totalUsersEl, activeUsersEl, adminUsersEl, disabledUsersEl].forEach(el => {
+              el.classList.remove('stat-value-update');
+            });
+          }, 500);
         }
+
+        // Add CSS for animation
+        const style = document.createElement('style');
+        style.textContent = `
+          .stat-value-update {
+            animation: statUpdate 0.5s ease-in-out;
+          }
+          @keyframes statUpdate {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+          }
+        `;
+        document.head.appendChild(style);
+
+        // Call updateStats after any user modification
+        function refreshStats() {
+          updateStats();
+        }
+
+        // Add event listeners for all user modifications
+        document.addEventListener('userModified', refreshStats);
 
         // View user details
         document.querySelectorAll(".view-user").forEach((button) => {
@@ -502,22 +546,14 @@
                     }),
                   });
 
-                  // Add debug logging
-                  console.log('Response status:', response.status);
-                  if (!response.ok) {
-                    const text = await response.text();
-                    console.log('Error response:', text);
-                    throw new Error(`Request failed: ${response.status} ${text}`);
-                  }
-
                   const result = await response.json();
                   if (result.success) {
-                    //showAlert("Thao tác thành công", "success");
+                    // Trigger stats update
+                    document.dispatchEvent(new Event('userModified'));
                   } else {
                     throw new Error(result.error || "Thao tác thất bại");
                   }
                 } catch (error) {
-                  //showAlert(error.message, "danger");
                   // Revert UI changes on error
                   const select = document.querySelector(
                     `tr[data-user-id="${currentUserId}"] .role-select`
@@ -564,12 +600,12 @@
                     statusLabel.innerHTML = isActive
                       ? '<span class="admin-badge admin-badge-success">Đang hoạt động</span>'
                       : '<span class="admin-badge admin-badge-danger">Đã vô hiệu hóa</span>';
-                    //showAlert("Thao tác thành công", "success");
+                    // Trigger stats update
+                    document.dispatchEvent(new Event('userModified'));
                   } else {
                     throw new Error(result.error || "Thao tác thất bại");
                   }
                 } catch (error) {
-                  //showAlert(error.message, "danger");
                   // Revert UI changes on error
                   const toggle = document.querySelector(
                     `tr[data-user-id="${currentUserId}"] .status-toggle`
@@ -606,15 +642,15 @@
                       ...currentAction,
                     }),
                   });
-                  console
+
                   const result = await response.json();
                   if (result.success) {
                     const row = document.querySelector(
                       `tr[data-user-id="${currentUserId}"]`
                     );
                     row.remove();
-                    updateStats();
-                    //showAlert("Thao tác thành công", "success");
+                    // Trigger stats update
+                    document.dispatchEvent(new Event('userModified'));
                   } else {
                     throw new Error(result.error || "Thao tác thất bại");
                   }
