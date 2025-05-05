@@ -35,23 +35,7 @@
     <div class="form-group description">
       <blockquote>{{ post.description }}</blockquote>
     </div>
-
-    <!-- Thẻ tags -->
-    {% if post.tags %}
-    <div class="form-group tags">
-      {% for tag in post.tags %}
-        <span>#{{ tag }}</span>
-      {% endfor %}
-    </div>
-    {% endif %}
-
-    <!-- Tệp đính kèm -->
-    {% if post.attachment_url %}
-    <div class="form-group attachment">
-      <a href="{{ post.attachment_url }}" download>📥 Tải file đính kèm</a>
-    </div>
-    {% endif %}
-
+    
     <!-- Quay về danh sách -->
     <div class="auth-links">
       <a href="{{ url_for('post.list_posts') }}">⬅️ Quay lại Danh sách</a>
