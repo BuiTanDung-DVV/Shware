@@ -29,7 +29,6 @@ if not firebase_admin._apps:
     firebase_admin.initialize_app(cred)
 db = firestore.client()
 
-ALLOWED_FILE_EXT = {'zip', 'rar', 'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx'}
 ALLOWED_IMG_EXT = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
 
 # Blog categories
@@ -63,6 +62,23 @@ def upload_to_cloudinary(file):
             flash(f'Error uploading image: {str(e)}', 'error')
     return None
 
+def generate_slug(title):
+    """Generate a URL-friendly slug from a title"""
+    # Replace special characters and convert to lowercase
+    import re
+    import unicodedata
+
+    # Normalize unicode characters
+    slug = unicodedata.normalize('NFKD', title).encode('ascii', 'ignore').decode('ascii')
+    # Convert to lowercase and replace spaces with hyphens
+    slug = re.sub(r'[^\w\s-]', '', slug.lower())
+    slug = re.sub(r'[\s_-]+', '-', slug)
+    slug = re.sub(r'^-+|-+$', '', slug)
+
+    # Add unique identifier
+    slug = slug + "-" + uuid.uuid4().hex[:6]
+    return slug
+
 
 @post_bp.route('/upload_post', methods=['GET', 'POST'])
 @login_required
@@ -72,11 +88,9 @@ def create_post():
         content = request.form.get('content')
         description = request.form.get('description')
         category = request.form.get('category', 'Other')
-        tags = request.form.get('tags', '')
-        tags_list = [tag.strip() for tag in tags.split(',') if tag.strip()]
+        status = request.form.get('status', 'published')  # Default to published
 
         thumbnail_file = request.files.get('thumbnail')
-        attachment_file = request.files.get('attachment')
 
         if not title or not content or not description:
             flash('Vui lòng điền đầy đủ các trường bắt buộc!', 'error')
@@ -85,27 +99,17 @@ def create_post():
         # Upload ảnh thumbnail nếu có
         thumbnail_url = ''
         if thumbnail_file and thumbnail_file.filename:
+            # Add file size validation
+            if len(thumbnail_file.read()) > 5 * 1024 * 1024:  # 5MB limit
+                flash('Kích thước ảnh vượt quá giới hạn cho phép (5MB)', 'error')
+                return redirect(request.url)
+
+            # Reset file pointer after reading for size check
+            thumbnail_file.seek(0)
             thumbnail_url = upload_to_cloudinary(thumbnail_file)
 
-        # Upload file đính kèm nếu có
-        file_info = {}
-        if attachment_file and allowed_ext(attachment_file.filename, ALLOWED_FILE_EXT):
-            filename = secure_filename(attachment_file.filename)
-            file_content = attachment_file.read()
-            file_size = len(file_content)
-            attachment_file.seek(0)
-            file_id, file_link = upload_to_drive(io.BytesIO(file_content), filename)
-
-            file_info = {
-                'file_name': filename,
-                'file_size': file_size,
-                'file_type': filename.rsplit('.', 1)[1].lower(),
-                'file_url': file_link,
-                'drive_file_id': file_id
-            }
-
         # Generate a slug from title
-        slug = "-".join(title.lower().split()) + "-" + uuid.uuid4().hex[:6]
+        slug = generate_slug(title)
 
         # Lưu thông tin bài viết vào Firestore
         post_ref = db.collection('posts').add({
@@ -113,10 +117,8 @@ def create_post():
             'content': content,
             'description': description,
             'category': category,
-            'tags': tags_list,
             'slug': slug,
             'thumbnail_url': thumbnail_url,
-            'file_info': file_info,
             'author': current_user.name,
             'author_id': current_user.id,
             'email': current_user.email,
@@ -127,20 +129,22 @@ def create_post():
             'comments_count': 0,
             'likes': 0,
             'featured': False,
-            'status': 'published'
+            'status': status  # Use the status from the form
         })
 
-        flash('Bài viết đã được đăng thành công!', 'success')
-        return redirect(url_for('post.view_post', slug=slug))
+        if status == 'draft':
+            flash('Bài viết đã được lưu nháp!', 'success')
+            return redirect(url_for('post.my_posts'))
+        else:
+            flash('Bài viết đã được đăng thành công!', 'success')
+            return redirect(url_for('post.view_post', slug=slug))
 
     return render_template('upload_post.html', categories=BLOG_CATEGORIES)
-
 
 @post_bp.route('/posts')
 def list_posts():
     try:
         category = request.args.get('category', '')
-        tag = request.args.get('tag', '')
 
         # Base query
         query = db.collection('posts').where('status', '==', 'published')
@@ -149,7 +153,6 @@ def list_posts():
         if category:
             query = query.where('category', '==', category)
 
-        # We'll filter by tag in Python since Firestore doesn't support array contains directly with other filters
         query = query.order_by('created_at', direction=firestore.Query.DESCENDING)
 
         posts = []
@@ -157,10 +160,6 @@ def list_posts():
 
         for doc in docs:
             data = doc.to_dict()
-            # Filter by tag if provided
-            if tag and tag not in data.get('tags', []):
-                continue
-
             data['id'] = doc.id
             # Format created_at for display
             if 'created_at' in data and data['created_at']:
@@ -187,27 +186,14 @@ def list_posts():
                 'count': category_counts.get(cat, 0)
             })
 
-        # Get popular tags
-        tag_counts = {}
-        for post in posts:
-            for tag in post.get('tags', []):
-                if tag in tag_counts:
-                    tag_counts[tag] += 1
-                else:
-                    tag_counts[tag] = 1
-
-        popular_tags = sorted(tag_counts.items(), key=lambda x: x[1], reverse=True)[:10]
-
         # Get featured posts
         featured_posts = [post for post in posts if post.get('featured', False)][:3]
 
         return render_template('posts.html',
                                posts=posts,
                                categories=categories,
-                               popular_tags=popular_tags,
                                featured_posts=featured_posts,
-                               selected_category=category,
-                               selected_tag=tag)
+                               selected_category=category)
     except Exception as e:
         flash(f'Không thể tải danh sách bài viết: {str(e)}', 'error')
         return render_template('posts.html', posts=[], categories=BLOG_CATEGORIES)
@@ -243,7 +229,7 @@ def view_post(slug):
             'view_count': Increment(1)
         })
 
-        # Fetch related posts with same category or tags (limit 3)
+        # Fetch related posts with same category (limit 3)
         related_posts = []
         if post.get('category'):
             related_query = db.collection('posts').where('category', '==', post['category']).where('slug', '!=',
@@ -299,7 +285,6 @@ def edit_post(doc_id):
         new_description = request.form.get('description')
         new_content = request.form.get('content')
         new_category = request.form.get('category', post_data.get('category', 'Other'))
-        new_tags = [tag.strip() for tag in request.form.get('tags', '').split(',') if tag.strip()]
         thumbnail_file = request.files.get('thumbnail')
         attachment_file = request.files.get('attachment')
 
@@ -308,7 +293,6 @@ def edit_post(doc_id):
             'description': new_description,
             'content': new_content,
             'category': new_category,
-            'tags': new_tags,
             'updated_at': datetime.utcnow().isoformat()
         }
 
@@ -317,23 +301,6 @@ def edit_post(doc_id):
             thumbnail_url = upload_to_cloudinary(thumbnail_file)
             if thumbnail_url:
                 updated_data['thumbnail_url'] = thumbnail_url
-
-        # Update attachment if provided
-        if attachment_file and allowed_ext(attachment_file.filename, ALLOWED_FILE_EXT):
-            filename = secure_filename(attachment_file.filename)
-            file_content = attachment_file.read()
-            file_size = len(file_content)
-            attachment_file.seek(0)
-            file_id, file_link = upload_to_drive(io.BytesIO(file_content), filename)
-
-            updated_data['file_info'] = {
-                'file_name': filename,
-                'file_size': file_size,
-                'file_type': filename.rsplit('.', 1)[1].lower(),
-                'file_url': file_link,
-                'drive_file_id': file_id
-            }
-
         try:
             post_ref.update(updated_data)
             flash('Cập nhật bài viết thành công!', 'success')

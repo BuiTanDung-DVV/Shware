@@ -12,6 +12,7 @@ from app.utils.date_formater import format_datetime_filter, timestamp_to_date
 from app.utils.filesize_formater import format_filesize
 from app.utils.currency_formater import format_currency
 import pyrebase
+from flask_wtf.csrf import CSRFProtect
 
 load_dotenv('.env')
 login_manager = LoginManager()
@@ -34,7 +35,6 @@ def create_app(config_class=Config):
     
     # Initialize CSRF protection
     csrf.init_app(app)
-    
     # Initialize limiter with app
     # limiter.init_app(app)
 
