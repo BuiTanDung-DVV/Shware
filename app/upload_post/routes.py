@@ -141,8 +141,13 @@ def create_post():
 
     return render_template('upload_post.html', categories=BLOG_CATEGORIES)
 
+
 @post_bp.route('/posts')
 def list_posts():
+    # Pagination
+    page = request.args.get('page', 1, type=int)
+    per_page = 9  # Show exactly 9 posts per page
+
     try:
         category = request.args.get('category', '')
 
@@ -155,12 +160,26 @@ def list_posts():
 
         query = query.order_by('created_at', direction=firestore.Query.DESCENDING)
 
-        posts = []
-        docs = query.stream()
+        # Get all documents (needed to calculate total for pagination)
+        all_docs = list(query.stream())
+        total_posts = len(all_docs)
+        total_pages = (total_posts + per_page - 1) // per_page  # Ceiling division
 
-        for doc in docs:
+        # Get posts for current page
+        start_idx = (page - 1) * per_page
+        end_idx = min(start_idx + per_page, total_posts)
+        page_docs = all_docs[start_idx:end_idx]
+
+        posts = []
+        for doc in page_docs:
             data = doc.to_dict()
             data['id'] = doc.id
+            # Ensure each post has a slug
+            if 'slug' not in data or not data['slug']:
+                data['slug'] = generate_slug(data.get('title', 'untitled'))
+                # Update slug in database
+                db.collection('posts').document(doc.id).update({'slug': data['slug']})
+
             # Format created_at for display
             if 'created_at' in data and data['created_at']:
                 try:
@@ -173,8 +192,9 @@ def list_posts():
         # Get list of all categories with counts
         categories = []
         category_counts = {}
-        for post in posts:
-            cat = post.get('category', 'Other')
+        for doc in all_docs:
+            post_data = doc.to_dict()
+            cat = post_data.get('category', 'Other')
             if cat in category_counts:
                 category_counts[cat] += 1
             else:
@@ -187,17 +207,20 @@ def list_posts():
             })
 
         # Get featured posts
-        featured_posts = [post for post in posts if post.get('featured', False)][:3]
+        featured_posts = [doc.to_dict() for doc in all_docs if doc.to_dict().get('featured', False)][:3]
+        for post in featured_posts:
+            post['id'] = doc.id
 
         return render_template('posts.html',
                                posts=posts,
                                categories=categories,
                                featured_posts=featured_posts,
-                               selected_category=category)
+                               selected_category=category,
+                               page=page,
+                               total_pages=total_pages)
     except Exception as e:
         flash(f'Không thể tải danh sách bài viết: {str(e)}', 'error')
-        return render_template('posts.html', posts=[], categories=BLOG_CATEGORIES)
-
+        return render_template('posts.html', posts=[], categories=BLOG_CATEGORIES, page=1, total_pages=1)
 
 @post_bp.route('/post/<slug>')
 def view_post(slug):
@@ -220,9 +243,9 @@ def view_post(slug):
         if 'created_at' in post and post['created_at']:
             try:
                 date = datetime.fromisoformat(post['created_at'])
-                post['created_at'] = date
+                post['formatted_date'] = date.strftime('%d/%m/%Y')
             except (ValueError, TypeError):
-                post['created_at'] = datetime.now()
+                post['formatted_date'] = 'N/A'
 
         # Increment view count
         db.collection('posts').document(post_id).update({
@@ -501,6 +524,7 @@ def my_posts():
         for doc in docs:
             data = doc.to_dict()
             data['id'] = doc.id
+            # Add the slug to each post to ensure we have it available for URL generation
             if 'created_at' in data and data['created_at']:
                 try:
                     date = datetime.fromisoformat(data['created_at'])

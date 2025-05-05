@@ -1,37 +1,258 @@
 {% extends 'base.html' %}
-{% block content %}
-<main class="container">
-  <h1 class="text-3xl font-bold mb-6">📚 Danh Sách Bài Viết</h1>
 
-  {% if posts %}
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-      {% for post in posts %}
-        <div class="rounded-xl shadow-md p-4 border border-gray-200 bg-white hover:shadow-lg transition duration-200">
-          <h2 class="text-xl font-semibold text-blue-600 mb-2">
-            {{ post.title }}
-          </h2>
-          <p class="text-gray-700 mb-2 line-clamp-3">
-            {{ post.description }}
-          </p>
-          {% if post.tags %}
-            <p class="text-sm text-gray-500 mb-2">
-              🏷 Tags: {{ post.tags | join(', ') }}
-            </p>
-          {% endif %}
-          {% if post.created_at %}
-            <p class="text-sm text-gray-400 mb-3">
-              🕒 {{ post.created_at | timestamp_to_date }}
-            </p>
-          {% endif %}
-          <a href="{{ url_for('post.view_post', post_id=post.id) }}"
-             class="inline-block px-4 py-2 bg-blue-500 text-white text-sm rounded hover:bg-blue-600 transition">
-            📖 Xem Chi Tiết
-          </a>
-        </div>
-      {% endfor %}
+{% block content %}
+<style>
+  main {
+    display: flex;
+    justify-content: center;
+    padding: 1.5rem;
+    margin: 0 auto;
+    width: 100%;
+    background-color: var(--bg-color);
+  }
+
+  .auth-form {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 1.5rem;
+    background-color: var(--card-bg);
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+  }
+
+  .auth-form h2 {
+    font-size: 2rem;
+    margin-bottom: 2rem;
+    text-align: center;
+    color: var(--primary-color);
+    font-weight: 600;
+  }
+
+  .posts-list {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2rem;
+  }
+
+  .card {
+    display: flex;
+    flex-direction: column;
+    border-radius: 0.75rem;
+    background-color: var(--card-bg);
+    height: 420px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s, box-shadow 0.2s;
+    overflow: hidden;
+    border: 1px solid var(--border-color);
+  }
+
+  .card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.12);
+  }
+
+  .header {
+    position: relative;
+    background-clip: border-box;
+    height: 200px;
+    overflow: hidden;
+  }
+
+  .header img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s;
+  }
+
+  .card:hover .header img {
+    transform: scale(1.05);
+  }
+
+  .info {
+    border: none;
+    padding: 1.5rem;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .title {
+    color: var(--text-color);
+    letter-spacing: 0;
+    line-height: 1.375;
+    font-weight: 700;
+    font-size: 1.25rem;
+    margin-bottom: 0.75rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+
+  .description {
+    font-size: 0.95rem;
+    color: var(--text-muted-color);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    margin-bottom: 0.75rem;
+  }
+
+  .post-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    color: var(--text-muted-color);
+    margin-top: auto;
+  }
+
+  .avatar-small {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    object-fit: cover;
+  }
+
+  .footer {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background-color: var(--light-color);
+  }
+
+  .tag {
+    font-weight: 500;
+    font-size: 0.8rem;
+    color: var(--text-muted-color);
+  }
+
+  .action {
+    display: inline-block;
+    text-decoration: none;
+    border: none;
+    outline: none;
+    box-shadow: 0 4px 6px -1px rgba(33, 150, 243, 0.3);
+    color: rgb(255, 255, 255);
+    text-transform: uppercase;
+    font-weight: 600;
+    font-size: 0.8rem;
+    padding: 0.6rem 1.2rem;
+    background-color: var(--primary-color);
+    border-radius: 0.5rem;
+    transition: background-color 0.2s;
+  }
+
+  .action:hover {
+    background-color: var(--link-hover-color);
+  }
+
+  .no-posts {
+    text-align: center;
+    color: var(--text-muted-color);
+    font-style: italic;
+    margin: 2rem 0;
+    grid-column: 1 / -1;
+  }
+
+  .pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 2.5rem;
+    gap: 0.5rem;
+  }
+
+  .pagination a, .pagination span {
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    text-decoration: none;
+    font-weight: 500;
+  }
+
+  .pagination a {
+    background-color: var(--primary-color);
+    color: white;
+    box-shadow: 0 2px 4px rgba(33, 150, 243, 0.25);
+    transition: background-color 0.2s;
+  }
+
+  .pagination a:hover {
+    background-color: var(--link-hover-color);
+  }
+
+  .pagination span {
+    color: var(--text-color);
+  }
+
+  @media (max-width: 992px) {
+    .posts-list {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (max-width: 768px) {
+    .posts-list {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+
+<main>
+  <div class="auth-form">
+    <h2>📝 Danh Sách Bài Viết</h2>
+
+    <div class="posts-list">
+      {% if posts %}
+        {% for post in posts %}
+          <div class="card">
+            <div class="header">
+              {% if post.thumbnail_url %}
+                <img src="{{ post.thumbnail_url }}" alt="Ảnh bài viết">
+              {% else %}
+                <img src="{{ url_for('static', filename='default-post.jpg') }}" alt="Default post image">
+              {% endif %}
+            </div>
+            <div class="info">
+              <p class="title">{{ post.title }}</p>
+              <p class="description">{{ post.description }}</p>
+              <div class="post-meta">
+                <img src="{{ post.author_avatar_url or post.profile_pic or url_for('static', filename='default_avatar.jpg') }}" alt="Avatar" class="avatar-small">
+                <span>{{ post.author_name }}</span>
+                <span>•</span>
+                <span>{{ post.formatted_date }}</span>
+              </div>
+            </div>
+            <div class="footer">
+              <p class="tag">Bài viết</p>
+              <a href="{{ url_for('post.view_post', slug=post.slug) }}" class="action">Xem chi tiết</a>
+            </div>
+          </div>
+        {% endfor %}
+      {% else %}
+        <p class="no-posts">Không có bài viết nào.</p>
+      {% endif %}
     </div>
-  {% else %}
-    <p class="text-gray-600">❌ Hiện chưa có bài viết nào được đăng.</p>
-  {% endif %}
+
+    <!-- Pagination Controls -->
+    <div class="pagination">
+      {% if page > 1 %}
+        <a href="{{ url_for('post.list_posts', page=page-1, category=selected_category) }}">⬅️ Trang trước</a>
+      {% endif %}
+
+      <span>Trang {{ page }} / {{ total_pages }}</span>
+
+      {% if page < total_pages %}
+        <a href="{{ url_for('post.list_posts', page=page+1, category=selected_category) }}">Trang tiếp ➡️</a>
+      {% endif %}
+    </div>
+  </div>
 </main>
 {% endblock %}

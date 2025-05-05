@@ -1,0 +1,139 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<main class="container">
+  <div class="page-header">
+    <h1>Bài Viết Của Tôi</h1>
+  </div>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="flashes">
+        {% for category, message in messages %}
+          <div class="flash {{ category }}">{{ message }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+
+  <div class="post-list">
+    {% if posts|length > 0 %}
+      {% for post in posts %}
+        <div class="post-card">
+          {% if post.thumbnail_url %}
+            <div class="post-thumbnail">
+              <img src="{{ post.thumbnail_url }}" alt="{{ post.title }}">
+            </div>
+          {% endif %}
+          <div class="post-details">
+            <h2 class="post-title">
+              <a href="{{ url_for('post.view_post', slug=post.slug) }}">{{ post.title }}</a>
+            </h2>
+            <div class="post-meta">
+              <span class="post-date">{{ post.formatted_date }}</span>
+              <span class="post-category">{{ post.category }}</span>
+              <span class="post-status">{{ post.status }}</span>
+            </div>
+            <p class="post-description">{{ post.description }}</p>
+            <div class="post-actions">
+              <a href="{{ url_for('post.view_post', slug=post.slug) }}" class="btn btn-primary">Xem</a>
+              <a href="{{ url_for('post.edit_post', doc_id=post.id) }}" class="btn btn-secondary">Chỉnh sửa</a>
+              <form action="{{ url_for('post.delete_post', doc_id=post.id) }}" method="POST" class="inline-form" onsubmit="return confirm('Bạn có chắc chắn muốn xóa bài viết này?');">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn btn-danger">Xóa</button>
+              </form>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    {% else %}
+      <div class="empty-state">
+        <p>Bạn chưa có bài viết nào.</p>
+        <a href="{{ url_for('post.create_post') }}" class="btn btn-primary">Tạo Bài Viết Mới</a>
+      </div>
+    {% endif %}
+  </div>
+
+  <div class="page-actions">
+    <a href="{{ url_for('post.create_post') }}" class="btn btn-primary">Tạo Bài Viết Mới</a>
+    <a href="{{ url_for('post.list_posts') }}" class="btn btn-outline">Xem Tất Cả Bài Viết</a>
+  </div>
+</main>
+
+<style>
+.post-list {
+  margin-top: 2rem;
+}
+
+.post-card {
+  display: flex;
+  border: 1px solid #eee;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  overflow: hidden;
+}
+
+.post-thumbnail {
+  width: 200px;
+  height: 150px;
+  overflow: hidden;
+}
+
+.post-thumbnail img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.post-details {
+  flex: 1;
+  padding: 1rem 1.5rem;
+}
+
+.post-title {
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+}
+
+.post-meta {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  font-size: 0.875rem;
+  color: #666;
+}
+
+.post-status {
+  text-transform: capitalize;
+  font-weight: bold;
+}
+
+.post-description {
+  margin-bottom: 1rem;
+  color: #333;
+}
+
+.post-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.inline-form {
+  display: inline;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 3rem;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+}
+
+.page-actions {
+  margin-top: 2rem;
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+}
+</style>
+{% endblock %}
