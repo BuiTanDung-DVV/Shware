@@ -210,7 +210,7 @@ def manage_user():
 
         if action == 'updateRole':
             new_role = data.get('role')
-            if new_role not in ['user', 'admin']:
+            if new_role not in ['user', 'admin', 'member']:
                 return jsonify({'success': False, 'error': 'Vai trò không hợp lệ'}), 400
 
             # Cập nhật role trong Firestore
