@@ -14,6 +14,7 @@ def home():
     try:
         # Lấy 5 tệp mới nhất cho slider
         latest_files_docs = db.collection('files') \
+            .where(filter=firestore.FieldFilter('visibility', '==', True)) \
             .order_by('upload_date', direction=firestore.Query.DESCENDING) \
             .limit(5) \
             .stream()
@@ -36,7 +37,7 @@ def home():
         per_page = 12
 
         # Xây dựng query cho files
-        files_query = db.collection('files').order_by('upload_date', direction=firestore.Query.DESCENDING)
+        files_query = db.collection('files').where(filter=firestore.FieldFilter('visibility', '==', True)).order_by('upload_date', direction=firestore.Query.DESCENDING)
         if selected_tag:
             files_query = files_query.where(filter=firestore.FieldFilter('tags', 'array_contains', selected_tag))
 
@@ -78,7 +79,7 @@ def home():
             # Fallback: lấy tags từ files nếu collection tags có vấn đề
             try:
                 all_tags_set = set()
-                files_for_tags = db.collection('files').stream()
+                files_for_tags = db.collection('files').where(filter=firestore.FieldFilter('visibility', '==', True)).stream()
                 for doc in files_for_tags:
                     file_tags = doc.to_dict().get('tags', [])
                     all_tags_set.update(file_tags)

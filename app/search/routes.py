@@ -33,7 +33,7 @@ def search():
 
     try:
         # Xây dựng truy vấn cơ bản
-        base_query = db.collection('files')
+        base_query = db.collection('files').where(filter=firestore.FieldFilter('visibility', '==', True))
         
         # Thêm lọc theo tag nếu có
         if tag_filter:
@@ -43,7 +43,6 @@ def search():
         if file_type_filter:
             base_query = base_query.where(filter=firestore.FieldFilter('file_type', '==', file_type_filter))
             
-
         # Thêm sắp xếp
         direction = firestore.Query.DESCENDING if sort_direction == 'desc' else firestore.Query.ASCENDING
         docs = base_query.order_by(sort_by, direction=direction).stream()
@@ -52,12 +51,12 @@ def search():
         for doc in docs:
             data = doc.to_dict()
             # Tìm kiếm trong title, description và tags
-            visible = data.get('visibility', True)
+            # visible = data.get('visibility', True)
             title_match = query_lower in data.get('title', '').lower()
             desc_match = query_lower in data.get('description', '').lower()
             tags_match = any(query_lower in tag.lower() for tag in data.get('tags', []))
 
-            if (title_match or desc_match or tags_match) and visible:
+            if (title_match or desc_match or tags_match):
                 results.append({
                     'doc_id': doc.id,
                     'title': data.get('title'),
