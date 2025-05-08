@@ -113,11 +113,11 @@
                 id="user-menu"
                 aria-labelledby="user-menu-button"
               >
-                {% if current_user.role != 'member' %}
+                {% if current_user.role == 'user'%}
                 <a
                   href="{{ url_for('payment.subscribe') }}"
                   class="dropdown-item"
-                >👑 Thành viên
+                  >👑 Thành viên
                 </a>
                 {% endif %}
                 <a
@@ -172,7 +172,8 @@
               <li><a href="{{ url_for('post.list_posts') }}">Blog</a></li>
               <li><a href="{{ url_for('post.create_post') }}">Đăng bài</a></li>
               <!--li><a href="{{ url_for('files.list_files') }}">Files</a></li-->
-              {% if current_user.role == 'member' or current_user.role == 'admin' %}
+              {% if current_user.role == 'member' or current_user.role ==
+              'admin' %}
               <li><a href="{{ url_for('upload.upload_file') }}">Tải lên</a></li>
               {% endif %} {% if current_user.role == 'admin' %}
               <li><a href="{{ url_for('admin.dashboard') }}">Quản trị</a></li>

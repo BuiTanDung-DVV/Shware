@@ -1,6 +1,4 @@
-{% extends "base.html" %}
-
-{% block styles %}
+{% extends "base.html" %} {% block styles %}
 <style>
   .subscription-container {
     max-width: 95%;
@@ -52,7 +50,6 @@
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
   }
-
 
   .plan-detail-item h5 {
     color: #212529;
@@ -183,14 +180,13 @@
       flex-direction: column;
     }
 
-    .btn-upgrade, .btn-cancel {
+    .btn-upgrade,
+    .btn-cancel {
       width: 100%;
     }
   }
 </style>
-{% endblock %}
-
-{% block content %}
+{% endblock %} {% block content %}
 <div class="subscription-container">
   <div class="subscription-card">
     <!--div class="subscription-header">
@@ -198,25 +194,33 @@
     </div-->
     <div class="subscription-body">
       <div class="current-plan">
-        <h4>Current Plan</h4>
+        <h4>Gói hiện tại</h4>
         <div class="plan-details">
           <div class="plan-detail-item">
-            <h5>Plan Type</h5>
+            <h5>Loại</h5>
             <p>{{ current_user.subscription_type|title }}</p>
           </div>
           <div class="plan-detail-item">
-            <h5>Status</h5>
-            <span class="badge {% if current_user.subscription_status == 'active' %}bg-success{% elif current_user.subscription_status == 'expired' %}bg-danger{% else %}bg-secondary{% endif %}">
+            <h5>Trạng thái</h5>
+            <span
+              class="badge {% if current_user.subscription_status == 'active' %}bg-success{% elif current_user.subscription_status == 'expired' %}bg-danger{% else %}bg-secondary{% endif %}"
+            >
               {{ current_user.subscription_status|title }}
             </span>
           </div>
           <div class="plan-detail-item">
-            <h5>Start Date</h5>
-            <p>{{ current_user.subscription_start_date|format_datetime if current_user.subscription_start_date else 'N/A' }}</p>
+            <h5>Ngày bắt đầu</h5>
+            <p>
+              {{ current_user.subscription_start_date|format_datetime if
+              current_user.subscription_start_date else 'N/A' }}
+            </p>
           </div>
           <div class="plan-detail-item">
-            <h5>End Date</h5>
-            <p>{{ current_user.subscription_end_date|format_datetime if current_user.subscription_end_date else 'N/A' }}</p>
+            <h5>Ngày kết thúc</h5>
+            <p>
+              {{ current_user.subscription_end_date|format_datetime if
+              current_user.subscription_end_date else 'N/A' }}
+            </p>
           </div>
         </div>
       </div>
@@ -224,30 +228,36 @@
       <div class="subscription-actions">
         <div class="action-buttons">
           {% if current_user.subscription_status == 'active' %}
-            <a href="{{ url_for('payment.subscribe') }}" class="btn btn-upgrade">
-              <i class="fas fa-arrow-up"></i> Upgrade Plan
-            </a>
-            <button type="button" class="btn btn-cancel" data-bs-toggle="modal" data-bs-target="#cancelSubscriptionModal" style="color: #a13a3a">
-              <i class="fas fa-times" style="color: #a13a3a"></i> Cancel Subscription
-            </button>
+          <a href="{{ url_for('payment.subscribe') }}" class="btn btn-upgrade">
+            <i class="fas fa-arrow-up"></i> Nâng cấp gói
+          </a>
+          <button
+            type="button"
+            class="btn btn-cancel"
+            data-bs-toggle="modal"
+            data-bs-target="#cancelSubscriptionModal"
+            style="color: #a13a3a"
+          >
+            <i class="fas fa-times" style="color: #a13a3a"></i> Hủy gói
+          </button>
           {% else %}
-            <a href="{{ url_for('payment.subscribe') }}" class="btn btn-upgrade">
-              <i class="fas fa-plus"></i> Subscribe Now
-            </a>
+          <a href="{{ url_for('payment.subscribe') }}" class="btn btn-upgrade">
+            <i class="fas fa-plus"></i> Đăng ký gói mới
+          </a>
           {% endif %}
         </div>
       </div>
 
       <div class="payment-history">
-        <h4>Payment History</h4>
+        <h4>Lịch sử thanh toán</h4>
         <div class="table-responsive">
           <table class="table">
             <thead>
               <tr>
-                <th>Date</th>
-                <th>Amount</th>
-                <th>Plan</th>
-                <th>Status</th>
+                <th>Ngày</th>
+                <th>Số tiền</th>
+                <th>Gói</th>
+                <th>Trạng thái</th>
               </tr>
             </thead>
             <tbody>
@@ -257,7 +267,9 @@
                 <td>{{ payment.amount|format_currency }}</td>
                 <td>{{ payment.plan_type|title }}</td>
                 <td>
-                  <span class="badge {% if payment.status == 'success' %}bg-success{% elif payment.status == 'pending' %}bg-warning{% else %}bg-success{% endif %}">
+                  <span
+                    class="badge {% if payment.status == 'success' %}bg-success{% elif payment.status == 'pending' %}bg-warning{% else %}bg-success{% endif %}"
+                  >
                     {{ payment.status|title }}
                   </span>
                 </td>
@@ -272,25 +284,46 @@
 </div>
 
 <!-- Cancel Subscription Modal -->
-<div class="modal fade" id="cancelSubscriptionModal" tabindex="-1" aria-labelledby="cancelSubscriptionModalLabel" aria-hidden="true">
+<div
+  class="modal fade"
+  id="cancelSubscriptionModal"
+  tabindex="-1"
+  aria-labelledby="cancelSubscriptionModalLabel"
+  aria-hidden="true"
+>
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="cancelSubscriptionModalLabel">Cancel Subscription</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        <h5 class="modal-title" id="cancelSubscriptionModalLabel">Hủy gói</h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+          aria-label="Close"
+        ></button>
       </div>
       <div class="modal-body">
         <p>Are you sure you want to cancel your subscription?</p>
-        <p>Your subscription will remain active until the end of your current billing period.</p>
+        <p>
+          Your subscription will remain active until the end of your current
+          billing period.
+        </p>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-        <form action="{{ url_for('user_profile.cancel_subscription') }}" method="POST">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          Close
+        </button>
+        <form
+          action="{{ url_for('user_profile.cancel_subscription') }}"
+          method="POST"
+        >
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-          <button type="submit" class="btn btn-danger">Cancel Subscription</button>
+          <button type="submit" class="btn btn-danger">
+            Cancel Subscription
+          </button>
         </form>
       </div>
     </div>
   </div>
 </div>
-{% endblock %} 
+{% endblock %}
