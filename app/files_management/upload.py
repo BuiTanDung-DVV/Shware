@@ -23,7 +23,7 @@ upload_bp = Blueprint('upload', __name__)
 # Google Drive Setup
 SCOPES = ['https://www.googleapis.com/auth/drive']
 FOLDER_ID = os.getenv('GGDRIVE_FOLDER_ID')
-ALLOWED_EXTENSIONS = {'zip', 'rar'}
+ALLOWED_EXTENSIONS = {'zip', 'rar', 'apk'}
 
 creds = Credentials.from_service_account_file(os.getenv('ADMIN_SDK_PATH'), scopes=SCOPES)
 service = build('drive', 'v3', credentials=creds)

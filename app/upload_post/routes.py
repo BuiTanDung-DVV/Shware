@@ -163,7 +163,12 @@ def list_posts():
         # Get all documents (needed to calculate total for pagination)
         all_docs = list(query.stream())
         total_posts = len(all_docs)
-        total_pages = (total_posts + per_page - 1) // per_page  # Ceiling division
+
+        # Ceiling division để tính tổng số trang
+        total_pages = (total_posts + per_page - 1) // per_page
+
+        # Debug - xác nhận số lượng bài viết và số trang
+        print(f"Total posts: {total_posts}, Total pages: {total_pages}, Current page: {page}")
 
         # Get posts for current page
         start_idx = (page - 1) * per_page
@@ -207,9 +212,15 @@ def list_posts():
             })
 
         # Get featured posts
-        featured_posts = [doc.to_dict() for doc in all_docs if doc.to_dict().get('featured', False)][:3]
+        featured_posts = [doc.to_dict() for doc in
+                          db.collection('posts').where('featured', '==', True).limit(3).stream()]
         for post in featured_posts:
-            post['id'] = doc.id
+            if 'id' not in post:
+                post['id'] = "unknown"
+
+        # Đảm bảo trang hiện tại không vượt quá tổng số trang
+        if page > total_pages and total_pages > 0:
+            return redirect(url_for('post.list_posts', page=total_pages, category=category))
 
         return render_template('posts.html',
                                posts=posts,
@@ -221,7 +232,6 @@ def list_posts():
     except Exception as e:
         flash(f'Không thể tải danh sách bài viết: {str(e)}', 'error')
         return render_template('posts.html', posts=[], categories=BLOG_CATEGORIES, page=1, total_pages=1)
-
 @post_bp.route('/post/<slug>')
 def view_post(slug):
     try:
